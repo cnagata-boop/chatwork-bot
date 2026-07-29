@@ -1,0 +1,17 @@
+{
+  "name": "chatwork-bot-botti",
+  "version": "1.0.0",
+  "description": "Chatwork AI Bot - Botti",
+  "main": "chatwork-bot.js",
+  "scripts": {
+    "start": "node chatwork-bot.js",
+    "dev": "node chatwork-bot.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
