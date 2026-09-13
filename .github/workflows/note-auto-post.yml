@@ -1,0 +1,60 @@
+name: note 自動投稿
+
+on:
+  schedule:
+    # 毎日 8:00 JST（UTC 23:00）に1本作る
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: '下書きで止めず、そのまま公開する'
+        type: boolean
+        default: false
+      topic:
+        description: 'ネタを指定する（空なら自動）'
+        type: string
+        required: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      # 書いたネタを覚えておく（キャッシュなので確実ではない。確実にしたいならサーバ常駐版を使う）
+      - name: 状態を復元
+        uses: actions/cache@v4
+        with:
+          path: data/state.json
+          key: note-state-${{ github.run_id }}
+          restore-keys: note-state-
+
+      - name: 記事を作って投稿する
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CHATWORK_TOKEN: ${{ secrets.CHATWORK_TOKEN }}
+          CHATWORK_ROOM_ID: ${{ secrets.CHATWORK_ROOM_ID }}
+          NOTE_AUTH_STATE_B64: ${{ secrets.NOTE_AUTH_STATE_B64 }}
+          NOTE_PUBLISH_MODE: ${{ inputs.publish && 'publish' || 'draft' }}
+          CONTENT_THEME: ${{ vars.CONTENT_THEME }}
+          CONTENT_AUDIENCE: ${{ vars.CONTENT_AUDIENCE }}
+          CONTENT_PERSONA: ${{ vars.CONTENT_PERSONA }}
+        run: node src/cli.js run ${{ inputs.topic && format('--topic "{0}"', inputs.topic) || '' }}
+
+      - name: 失敗時の画面を残す
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: note-screenshots
+          path: data/shots/
+          if-no-files-found: ignore
