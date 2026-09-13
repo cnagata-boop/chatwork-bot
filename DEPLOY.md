@@ -53,7 +53,8 @@ Claude API は1記事あたり5〜15円程度の従量課金。
 
 **GitHub Actions**（無料枠で足ります）
 
-リポジトリの Settings → Secrets に `CLAUDE_API_KEY` と `NOTE_AUTH_STATE_B64` を登録すれば、
+リポジトリの Settings → Secrets に `CLAUDE_API_KEY` と `NOTE_AUTH_STATE_B64`
+（LINE通知を使うなら `LINE_CHANNEL_ACCESS_TOKEN` も）を登録すれば、
 `.github/workflows/note-auto-post.yml` が毎日 8:00 JST に1本作ります。
 手動で流したいときは Actions タブから「note 自動投稿」→ Run workflow。
 

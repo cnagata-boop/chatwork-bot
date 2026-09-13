@@ -4,9 +4,9 @@
 手元（またはサーバ・GitHub Actions）だけで完結します。
 
 ```
-ネタ帳 ──▶ Claude が執筆 ──▶ 検品 ──▶ note に下書き保存 ──▶ 手元で確認
-                                                    │
-                          npm run note -- publish <ID> ─┘ で公開
+ネタ帳 ──▶ Claude が執筆 ──▶ 検品 ──▶ note に下書き保存 ──▶ LINE に通知
+                                                           │
+                              スマホの note アプリで読んで「公開」 ─┘
 ```
 
 既定では **下書きまで**しか進みません。中身を自分で見てから公開する運用が前提です
@@ -37,6 +37,7 @@ npm run note:run            # 執筆して note に下書き保存
 | `npm run note -- reject <ID>` | 下書きを不採用にする |
 | `npm run note -- topics --refill 10` | ネタ帳を Claude に補充させる |
 | `npm run note:report` | PV・公開本数のレポート |
+| `npm run note -- notify-test` | LINE などにお知らせが届くか試す |
 | `npm test` | 動作確認（外部APIを叩かない範囲） |
 
 ## 自動で回す
@@ -45,8 +46,17 @@ npm run note:run            # 執筆して note に下書き保存
 - **サーバ常駐**: `npm start` + `AUTO_POST_ENABLED=true` / `AUTO_POST_CRON=0 8 * * *`
 - **外部スケジューラ**: `POST /cron/post`（ヘッダ `x-cron-secret`）
 
-お知らせが欲しい場合だけ `NOTIFY_WEBHOOK_URL`（Slack や Discord の Incoming Webhook など）を
-設定してください。未設定ならログに出るだけで、外部には何も送りません。
+## LINE に通知する（おすすめ）
+
+`LINE_CHANNEL_ACCESS_TOKEN` を入れておくと、下書きができたときに LINE へURLが届きます。
+あとはスマホの note アプリで中身を見て、公開ボタンを押すだけ。設定手順は
+[NOTE_AUTOPOST.md](NOTE_AUTOPOST.md#line-に通知するおすすめ無料) にあります（5分・無料）。
+
+```bash
+npm run note -- notify-test   # 届くか確認
+```
+
+未設定ならログに出るだけで、外部には何も送りません。Slack / Discord 派は `NOTIFY_WEBHOOK_URL`。
 
 詳しい手順・小遣い稼ぎとしての設計・トラブル対応は **[NOTE_AUTOPOST.md](NOTE_AUTOPOST.md)**、
 サーバへのデプロイは [DEPLOY.md](DEPLOY.md) を見てください。

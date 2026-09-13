@@ -13,17 +13,16 @@ const truncate = (text, len) => (text && text.length > len ? `${text.slice(0, le
 
 function draftLines(post) {
   return [
-    `ネタ: ${post.topic}`,
     `要約: ${truncate(post.summary, 120)}`,
     `タグ: ${(post.tags || []).join(' / ')}`,
-    `下書き: ${post.editUrl || '(未作成)'}`,
     post.paid
       ? `※有料記事の構成です。値段の設定は note の画面で行ってください（想定 ${config.content.paidPrice}円）`
       : '',
     '',
-    `中身を見る → npm run note -- show ${post.id}`,
-    `公開する　 → npm run note -- publish ${post.id}`,
-    `捨てる　　 → npm run note -- reject ${post.id}`,
+    '▼ 中身を見て、よければ note の「公開」ボタンを押してください',
+    post.editUrl || '(下書きURLなし)',
+    '',
+    `PCから公開する場合: npm run note -- publish ${post.id}`,
   ];
 }
 

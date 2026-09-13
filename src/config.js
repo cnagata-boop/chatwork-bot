@@ -35,8 +35,14 @@ const config = {
   },
 
   notify: {
-    // 「下書きができました」などのお知らせ先。空ならログに出すだけ。
-    // Slack / Discord などの Incoming Webhook URL をそのまま入れられる。
+    // 「下書きができました」などのお知らせ先。どれも空ならログに出すだけ。
+    line: {
+      // LINE公式アカウント（Messaging API）のチャネルアクセストークン
+      token: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
+      // 送り先のユーザーID。空なら友だち全員（＝自分だけ）に broadcast する
+      to: process.env.LINE_TO || '',
+    },
+    // Slack / Discord などの Incoming Webhook URL をそのまま入れられる
     webhookUrl: process.env.NOTIFY_WEBHOOK_URL || '',
   },
 

@@ -5,6 +5,7 @@ const pipeline = require('./pipeline');
 const store = require('./store');
 const topicsLib = require('./topics');
 const noteClient = require('./note/client');
+const { notify } = require('./notify');
 const { fetchStats } = require('./note/stats');
 const log = require('./logger');
 
@@ -45,6 +46,7 @@ note 自動投稿ツール
   reject <id>               下書きを不採用にする
   topics [--refill 10] [--add "ネタ"]
                             ネタ帳の確認・補充・追加
+  notify-test               お知らせ（LINEなど）が届くか試す
   stats                     note の PV などを取得する
   report [--send] [--days 7]
                             成果レポートを作る（--send で通知先にも流す）
@@ -137,6 +139,14 @@ async function main() {
       const all = topicsLib.loadTopics();
       console.log(`\nネタ帳: ${all.length}件（未使用 ${all.filter((t) => !used.has(t)).length}件）`);
       all.filter((t) => !used.has(t)).slice(0, 20).forEach((t) => console.log(`- ${t}`));
+      break;
+    }
+
+    case 'notify-test': {
+      const result = await notify('note自動投稿ツールのテスト通知です', [
+        'これが届いていれば設定は完了しています。',
+      ]);
+      console.log(result.sent ? '送信しました' : '送信先が未設定です（ログに出すだけになります）');
       break;
     }
 

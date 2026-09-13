@@ -8,7 +8,8 @@ process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync('/tmp/note-test-')
 
 const generator = require('../src/generator');
 const store = require('../src/store');
-const { notify } = require('../src/notify');
+const { notify, trimForLine, LINE_MAX_CHARS } = require('../src/notify');
+const pipeline = require('../src/pipeline');
 const { app } = require('../src/server');
 
 test('タグは # を外して重複を消し、上限で切る', () => {
@@ -46,6 +47,24 @@ test('通知先が未設定ならログに出すだけで落ちない', async ()
   const result = await notify('テスト', ['1行目']);
   assert.strictEqual(result.sent, false);
   assert.match(result.text, /テスト\n1行目/);
+});
+
+test('LINE の文字数上限で切り詰める', () => {
+  assert.strictEqual(trimForLine('短い文'), '短い文');
+  const long = trimForLine('あ'.repeat(LINE_MAX_CHARS + 500));
+  assert.strictEqual(long.length, LINE_MAX_CHARS);
+  assert.ok(long.endsWith('…'));
+});
+
+test('下書きのお知らせに note のURLが入る（スマホからそのまま開ける）', () => {
+  const lines = pipeline.draftLines({
+    id: 'p1',
+    topic: 'ネタ',
+    summary: '要約',
+    tags: ['経理'],
+    editUrl: 'https://note.com/notes/n123/edit',
+  });
+  assert.ok(lines.includes('https://note.com/notes/n123/edit'));
 });
 
 test('/health が記事の状況を返す', async () => {

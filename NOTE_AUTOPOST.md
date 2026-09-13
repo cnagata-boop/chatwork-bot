@@ -9,8 +9,8 @@ data/topics.json        ネタ帳（自分で足す or Claude が補充）
       ▼  src/generator.js    Claude が本文・タイトル・ハッシュタグを書く
       ▼                      検品（文字数・定型文・タグの有無）に落ちたら書き直し
       ▼  src/note/client.js  Playwright が note のエディタを操作して下書き保存
-      ▼  src/notify.js       「下書きできました」をログ（任意でWebhook）に出す
-      ▼  npm run note -- publish <ID>   → 公開
+      ▼  src/notify.js       「下書きできました」をログ／LINEに出す
+      ▼  note のアプリか npm run note -- publish <ID>  → 公開
 ```
 
 | ファイル | 役割 |
@@ -23,7 +23,7 @@ data/topics.json        ネタ帳（自分で足す or Claude が補充）
 | `src/note/selectors.js` | note の画面が変わったときに直す場所 |
 | `src/note/stats.js` | PV などの取得 |
 | `src/store.js` | 書いた記事の履歴（`data/state.json`） |
-| `src/notify.js` | お知らせ（既定はログのみ。Webhook URL を入れればそこへ） |
+| `src/notify.js` | お知らせ（既定はログのみ。LINE や Webhook を設定すればそこへ） |
 | `src/server.js` | 常駐させる場合の定期実行と `/health`・`/cron/*` |
 
 note には記事投稿の公開 API がないため、ブラウザ操作（Playwright）で自分のアカウントを動かしています。
@@ -43,9 +43,38 @@ cp env.example .env
 CLAUDE_API_KEY=sk-ant-...
 ```
 
-お知らせを別の場所（Slack や Discord など）にも飛ばしたい場合だけ、
-`NOTIFY_WEBHOOK_URL` にその Incoming Webhook URL を入れてください。
-未設定ならログに出るだけで、外部には何も送りません。
+お知らせが要らなければこれだけで動きます（ログに出るだけ）。
+スマホに届けたい場合は次の「LINE に通知する」を設定してください。
+
+### LINE に通知する（おすすめ・無料）
+
+朝に記事ができると LINE に下書きのURLが届き、**note のアプリで中身を見てそのまま公開**できます。
+LINE から指示を送る仕組み（Webhookサーバ）は不要です。
+
+1. https://developers.line.biz/console/ に LINE アカウントでログイン
+2. プロバイダーを作る → **Messaging API** のチャネルを1つ作る
+3. チャネルの画面にあるQRコードを、自分のスマホの LINE で友だち追加する
+4. 「Messaging API設定」タブ → **チャネルアクセストークン（長期）** を発行してコピー
+5. `.env` に貼る
+
+```
+LINE_CHANNEL_ACCESS_TOKEN=（コピーしたトークン）
+LINE_TO=                    # 空のままでよい
+```
+
+6. 届くか試す
+
+```bash
+npm run note -- notify-test
+```
+
+`LINE_TO` を空にしておくと「友だち全員に送る」動きになります。友だちは自分だけなので、
+ユーザーIDを調べる手間が省けます。同じチャネルを他人に友だち追加させないでください。
+
+※ 旧 LINE Notify は2025年3月末で終了しているため、上の Messaging API を使います。
+無料枠は月200通程度なので、1日1通知なら収まります（最新の条件は LINE の公式情報で確認してください）。
+
+Slack や Discord に送りたい場合は、代わりに `NOTIFY_WEBHOOK_URL` に Incoming Webhook URL を入れます。
 
 ### note にログインする
 
@@ -102,7 +131,7 @@ base64 -w0 data/note-auth.json    # mac は base64 -i data/note-auth.json
 | --- | --- |
 | `CLAUDE_API_KEY` | Claude の API キー |
 | `NOTE_AUTH_STATE_B64` | 上の base64 |
-| `NOTIFY_WEBHOOK_URL` | お知らせの送り先（任意） |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE通知を使う場合（任意） |
 
 **C. 外部スケジューラ / 手元の cron**
 
@@ -160,6 +189,7 @@ note でお金が入る経路は主に4つ。**記事を出すこと自体はお
 | 投稿が途中で止まる | `data/shots/` に失敗時のスクリーンショットが残ります。`NOTE_HEADLESS=false` で動きを目視できます |
 | 見出しや箇条書きが反映されない | エディタの入力は1行ずつ打って書式ショートカットを効かせています。`NOTE_SLOW_MO=50` を試してください |
 | 統計が取れない | note 側の内部APIの仕様変更。取れなくても投稿自体は動きます |
+| LINE が届かない | `npm run note -- notify-test` で確認。トークンの貼り間違いか、公式アカウントを友だち追加していないことが大半 |
 | 同じようなネタばかり出る | `data/state.json` が消えていないか確認（サーバなら永続ディスク、Actions ならキャッシュ） |
 
 ## 8. 自分好みにする
