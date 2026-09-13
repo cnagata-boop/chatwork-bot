@@ -1,11 +1,10 @@
 {
-  "name": "chatwork-bot-botti",
+  "name": "note-auto-post",
   "version": "2.0.0",
-  "description": "Chatwork AI Bot - Botti + note 自動投稿パイプライン",
-  "main": "chatwork-bot.js",
+  "description": "note 自動投稿パイプライン（Claude で執筆 → note に下書き/公開）",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node chatwork-bot.js",
-    "dev": "node chatwork-bot.js",
+    "start": "node src/server.js",
     "note": "node src/cli.js",
     "note:login": "node src/cli.js login",
     "note:generate": "node src/cli.js generate",

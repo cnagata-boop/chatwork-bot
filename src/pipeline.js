@@ -4,36 +4,34 @@ const { config } = require('./config');
 const topics = require('./topics');
 const generator = require('./generator');
 const store = require('./store');
-const chatwork = require('./chatwork');
+const { notify } = require('./notify');
 const noteClient = require('./note/client');
 const { fetchStats } = require('./note/stats');
 const log = require('./logger');
 
 const truncate = (text, len) => (text && text.length > len ? `${text.slice(0, len)}…` : text || '');
 
-function infoBox(title, lines) {
-  return `[info][title]${title}[/title]${lines.filter(Boolean).join('\n')}[/info]`;
-}
-
-function draftNotice(post) {
-  const lines = [
+function draftLines(post) {
+  return [
     `ネタ: ${post.topic}`,
     `要約: ${truncate(post.summary, 120)}`,
     `タグ: ${(post.tags || []).join(' / ')}`,
     `下書き: ${post.editUrl || '(未作成)'}`,
-    post.paid ? `※有料記事の構成です。値段の設定は note の画面で行ってください（想定 ${config.content.paidPrice}円）` : '',
+    post.paid
+      ? `※有料記事の構成です。値段の設定は note の画面で行ってください（想定 ${config.content.paidPrice}円）`
+      : '',
     '',
-    `公開する → @${config.chatwork.botName} note 公開 ${post.id}`,
-    `捨てる　 → @${config.chatwork.botName} note 却下 ${post.id}`,
+    `中身を見る → npm run note -- show ${post.id}`,
+    `公開する　 → npm run note -- publish ${post.id}`,
+    `捨てる　　 → npm run note -- reject ${post.id}`,
   ];
-  return infoBox(`note下書きができました: ${post.title}`, lines);
 }
 
-function publishedNotice(post) {
-  return infoBox(`note に公開しました: ${post.title}`, [
+function publishedLines(post) {
+  return [
     `URL: ${post.publishedUrl || post.editUrl}`,
     `タグ: ${(post.tags || []).join(' / ')}`,
-  ]);
+  ];
 }
 
 /**
@@ -41,7 +39,7 @@ function publishedNotice(post) {
  * @param {{publish?: boolean, dryRun?: boolean, topic?: string, notify?: boolean}} options
  */
 async function runOnce(options = {}) {
-  const { dryRun = false, notify = true } = options;
+  const { dryRun = false, notify: shouldNotify = true } = options;
   const publish = options.publish !== undefined
     ? options.publish
     : config.note.publishMode === 'publish';
@@ -83,20 +81,20 @@ async function runOnce(options = {}) {
       publishedAt: publishedUrl ? new Date().toISOString() : null,
     });
 
-    if (notify) {
-      await chatwork.sendMessage(updated.publishedUrl ? publishedNotice(updated) : draftNotice(updated));
+    if (shouldNotify) {
+      await (updated.publishedUrl
+        ? notify(`note に公開しました: ${updated.title}`, publishedLines(updated))
+        : notify(`note の下書きができました: ${updated.title}`, draftLines(updated)));
     }
     return updated;
   } catch (error) {
     const failed = store.updatePost(post.id, { status: 'failed', error: error.message });
-    if (notify) {
-      await chatwork.sendMessage(
-        infoBox('note の投稿に失敗しました', [
-          `記事: ${post.title}`,
-          `理由: ${error.message}`,
-          `原稿は残っています（ID: ${post.id}）。\`npm run note -- show ${post.id}\` で中身を確認できます。`,
-        ]),
-      );
+    if (shouldNotify) {
+      await notify('note の投稿に失敗しました', [
+        `記事: ${post.title}`,
+        `理由: ${error.message}`,
+        `原稿は残っています。中身は npm run note -- show ${post.id}`,
+      ]);
     }
     error.post = failed;
     throw error;
@@ -104,7 +102,7 @@ async function runOnce(options = {}) {
 }
 
 /** 下書きを公開する */
-async function approve(id, { notify = true } = {}) {
+async function approve(id, { notify: shouldNotify = true } = {}) {
   const post = store.getPost(id);
   if (!post) throw new Error(`記事が見つかりません: ${id}`);
   if (post.status === 'published') return post;
@@ -116,7 +114,7 @@ async function approve(id, { notify = true } = {}) {
     publishedUrl,
     publishedAt: new Date().toISOString(),
   });
-  if (notify) await chatwork.sendMessage(publishedNotice(updated));
+  if (shouldNotify) await notify(`note に公開しました: ${updated.title}`, publishedLines(updated));
   return updated;
 }
 
@@ -127,8 +125,10 @@ function reject(id) {
   return store.updatePost(id, { status: 'rejected' });
 }
 
-/** 直近の成果をまとめて Chatwork に流す用のテキストを作る */
-async function buildReport({ days = 7 } = {}) {
+const REPORT_TITLE = 'note 自動投稿レポート';
+
+/** 直近の成果（公開本数・PVなど）をまとめる */
+async function buildReportLines({ days = 7 } = {}) {
   const since = Date.now() - days * 24 * 60 * 60 * 1000;
   const posts = store.listPosts({ limit: 200 }).filter((p) => new Date(p.createdAt).getTime() >= since);
 
@@ -157,13 +157,26 @@ async function buildReport({ days = 7 } = {}) {
     lines.push('', '公開待ちの下書き:', ...drafts.map((d) => `- ${d.id} ${truncate(d.title, 40)}`));
   }
 
-  return infoBox('note 自動投稿レポート', lines);
+  return lines;
+}
+
+async function buildReport(options) {
+  return [REPORT_TITLE, ...(await buildReportLines(options))].join('\n');
 }
 
 async function sendReport(options) {
-  const text = await buildReport(options);
-  await chatwork.sendMessage(text);
-  return text;
+  const lines = await buildReportLines(options);
+  await notify(REPORT_TITLE, lines);
+  return [REPORT_TITLE, ...lines].join('\n');
 }
 
-module.exports = { runOnce, approve, reject, buildReport, sendReport, draftNotice, publishedNotice };
+module.exports = {
+  runOnce,
+  approve,
+  reject,
+  buildReport,
+  buildReportLines,
+  sendReport,
+  draftLines,
+  publishedLines,
+};

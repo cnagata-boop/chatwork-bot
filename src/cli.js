@@ -47,7 +47,7 @@ note 自動投稿ツール
                             ネタ帳の確認・補充・追加
   stats                     note の PV などを取得する
   report [--send] [--days 7]
-                            成果レポートを作る（--send で Chatwork に流す）
+                            成果レポートを作る（--send で通知先にも流す）
 `;
 
 async function main() {
@@ -155,7 +155,7 @@ async function main() {
     case 'report': {
       const days = parseInt(args.flags.days, 10) || 7;
       const text = args.flags.send ? await pipeline.sendReport({ days }) : await pipeline.buildReport({ days });
-      console.log(text.replace(/\[\/?(info|title)\]/g, ''));
+      if (!args.flags.send) console.log(text);
       break;
     }
 

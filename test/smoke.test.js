@@ -2,26 +2,14 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
 
-process.env.DATA_DIR = process.env.DATA_DIR || require('node:fs').mkdtempSync('/tmp/note-test-');
+process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync('/tmp/note-test-');
 
-const { stripChatworkTags, normalizeEvent } = require('../chatwork-bot');
 const generator = require('../src/generator');
 const store = require('../src/store');
-
-test('Chatwork のタグを落として素の文面にする', () => {
-  assert.strictEqual(stripChatworkTags('[To:123]@Botti note 公開 p1'), 'note 公開 p1');
-  assert.strictEqual(stripChatworkTags('[rp aid=9]@Botti  こんにちは '), 'こんにちは');
-});
-
-test('Webhook は入れ子でも平たくても読める', () => {
-  const nested = normalizeEvent({ webhook_event: { body: 'a', room_id: 1, account_id: 2 } });
-  assert.deepStrictEqual(nested, { body: 'a', roomId: 1, fromAccountId: 2, messageId: undefined });
-
-  const flat = normalizeEvent({ body: 'b', room_id: 3, from_account_id: 4 });
-  assert.strictEqual(flat.roomId, 3);
-  assert.strictEqual(flat.fromAccountId, 4);
-});
+const { notify } = require('../src/notify');
+const { app } = require('../src/server');
 
 test('タグは # を外して重複を消し、上限で切る', () => {
   const tags = generator.normalizeTags(['#経理', '経理', 'AI 活用', '', 'a', 'b', 'c', 'd']);
@@ -41,6 +29,10 @@ test('検品は短すぎる原稿と定型文をはじく', () => {
   assert.deepStrictEqual(generator.validate(ok), []);
 });
 
+test('本文の整形で余分な空行と強調記号を落とす', () => {
+  assert.strictEqual(generator.normalizeBody('**太字**\n\n\n\n次の段落  '), '太字\n\n次の段落');
+});
+
 test('記事を保存して状態を更新できる', () => {
   const post = store.addPost({ topic: 'ネタ', title: 'タイトル', body: '本文', tags: ['経理'] });
   assert.strictEqual(post.status, 'draft');
@@ -48,4 +40,40 @@ test('記事を保存して状態を更新できる', () => {
   store.updatePost(post.id, { status: 'published', publishedUrl: 'https://note.com/x/n/y' });
   assert.strictEqual(store.getPost(post.id).status, 'published');
   assert.ok(store.usedTopics().includes('ネタ'));
+});
+
+test('通知先が未設定ならログに出すだけで落ちない', async () => {
+  const result = await notify('テスト', ['1行目']);
+  assert.strictEqual(result.sent, false);
+  assert.match(result.text, /テスト\n1行目/);
+});
+
+test('/health が記事の状況を返す', async () => {
+  const server = app.listen(0);
+  try {
+    const { port } = server.address();
+    const res = await fetch(`http://127.0.0.1:${port}/health`);
+    const body = await res.json();
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(body.status, 'ok');
+    assert.strictEqual(body.publishMode, 'draft');
+    assert.ok(body.posts.total >= 1);
+  } finally {
+    server.close();
+  }
+});
+
+test('合言葉が設定されていれば /cron/post は弾かれる', async () => {
+  const { config } = require('../src/config');
+  const original = config.schedule.secret;
+  config.schedule.secret = 'himitsu';
+  const server = app.listen(0);
+  try {
+    const { port } = server.address();
+    const res = await fetch(`http://127.0.0.1:${port}/cron/post`, { method: 'POST' });
+    assert.strictEqual(res.status, 401);
+  } finally {
+    config.schedule.secret = original;
+    server.close();
+  }
 });

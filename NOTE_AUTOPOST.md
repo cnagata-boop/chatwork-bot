@@ -9,8 +9,8 @@ data/topics.json        ネタ帳（自分で足す or Claude が補充）
       ▼  src/generator.js    Claude が本文・タイトル・ハッシュタグを書く
       ▼                      検品（文字数・定型文・タグの有無）に落ちたら書き直し
       ▼  src/note/client.js  Playwright が note のエディタを操作して下書き保存
-      ▼  src/chatwork.js     「下書きできました」を Chatwork に通知
-      ▼  「note 公開 <ID>」  → 公開。URL が Chatwork に返る
+      ▼  src/notify.js       「下書きできました」をログ（任意でWebhook）に出す
+      ▼  npm run note -- publish <ID>   → 公開
 ```
 
 | ファイル | 役割 |
@@ -23,7 +23,8 @@ data/topics.json        ネタ帳（自分で足す or Claude が補充）
 | `src/note/selectors.js` | note の画面が変わったときに直す場所 |
 | `src/note/stats.js` | PV などの取得 |
 | `src/store.js` | 書いた記事の履歴（`data/state.json`） |
-| `chatwork-bot.js` | Webhook・定期実行・`/cron/*` |
+| `src/notify.js` | お知らせ（既定はログのみ。Webhook URL を入れればそこへ） |
+| `src/server.js` | 常駐させる場合の定期実行と `/health`・`/cron/*` |
 
 note には記事投稿の公開 API がないため、ブラウザ操作（Playwright）で自分のアカウントを動かしています。
 つまり **自分の手作業を自動化している**だけで、note の非公開APIを叩いて投稿しているわけではありません。
@@ -40,9 +41,11 @@ cp env.example .env
 
 ```
 CLAUDE_API_KEY=sk-ant-...
-CHATWORK_TOKEN=...        # 通知が要らなければ空でOK
-CHATWORK_ROOM_ID=...      # 同上
 ```
+
+お知らせを別の場所（Slack や Discord など）にも飛ばしたい場合だけ、
+`NOTIFY_WEBHOOK_URL` にその Incoming Webhook URL を入れてください。
+未設定ならログに出るだけで、外部には何も送りません。
 
 ### note にログインする
 
@@ -68,7 +71,7 @@ npm run note:run             # 気に入ったら下書き保存まで
 
 | モード | 設定 | 向いている人 |
 | --- | --- | --- |
-| 承認制（既定・推奨） | `NOTE_PUBLISH_MODE=draft` | 中身を見てから出したい。Chatwork で `note 公開 <ID>` |
+| 承認制（既定・推奨） | `NOTE_PUBLISH_MODE=draft` | 中身を見てから出したい。`npm run note -- publish <ID>` で公開 |
 | 全自動 | `NOTE_PUBLISH_MODE=publish` | 毎日回して量を出したい。ただし事故が表に出る |
 | 有料記事 | `CONTENT_PAID=true` | 無料パート＋有料パート構成で書く。値段設定は note の画面で手動（自動公開はしない） |
 
@@ -99,13 +102,17 @@ base64 -w0 data/note-auth.json    # mac は base64 -i data/note-auth.json
 | --- | --- |
 | `CLAUDE_API_KEY` | Claude の API キー |
 | `NOTE_AUTH_STATE_B64` | 上の base64 |
-| `CHATWORK_TOKEN` / `CHATWORK_ROOM_ID` | 通知先（任意） |
+| `NOTIFY_WEBHOOK_URL` | お知らせの送り先（任意） |
 
-**C. 外部スケジューラ**
+**C. 外部スケジューラ / 手元の cron**
 
 ```
+# サーバを立てている場合
 POST https://<your-app>/cron/post     ヘッダ: x-cron-secret: <CRON_SECRET>
 POST https://<your-app>/cron/report   週1のレポート用
+
+# PC の cron で回すだけでもよい（毎朝8時に1本）
+0 8 * * * cd /path/to/note-auto-post && /usr/bin/npm run note:run >> data/cron.log 2>&1
 ```
 
 ## 4. 小遣いになるまでの設計
@@ -160,4 +167,5 @@ note でお金が入る経路は主に4つ。**記事を出すこと自体はお
 - テーマ・読者・文体 … `.env` の `CONTENT_*`
 - 記事の型（見出し数・構成）… `src/generator.js` の `buildPrompt`
 - 検品ルール … 同ファイルの `validate`
-- Chatwork のコマンド … `chatwork-bot.js` の `noteCommands`
+- お知らせの出し先 … `src/notify.js`
+- サーバのエンドポイント … `src/server.js`

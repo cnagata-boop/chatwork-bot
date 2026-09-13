@@ -34,11 +34,10 @@ const config = {
     maxTokens: toInt(process.env.CLAUDE_MAX_TOKENS, 4000),
   },
 
-  chatwork: {
-    token: process.env.CHATWORK_TOKEN,
-    // 通知（下書きできました等）を送る部屋。未設定なら Chatwork 通知はスキップ。
-    roomId: process.env.CHATWORK_ROOM_ID,
-    botName: process.env.BOT_NAME || 'Botti',
+  notify: {
+    // 「下書きができました」などのお知らせ先。空ならログに出すだけ。
+    // Slack / Discord などの Incoming Webhook URL をそのまま入れられる。
+    webhookUrl: process.env.NOTIFY_WEBHOOK_URL || '',
   },
 
   note: {
@@ -92,8 +91,6 @@ function requireConfig(keys) {
   if (missing.length) {
     const envNames = {
       'claude.apiKey': 'CLAUDE_API_KEY',
-      'chatwork.token': 'CHATWORK_TOKEN',
-      'chatwork.roomId': 'CHATWORK_ROOM_ID',
       'note.email': 'NOTE_EMAIL',
       'note.password': 'NOTE_PASSWORD',
     };

@@ -1,92 +1,75 @@
-# Chatwork Bot デプロイ手順（Render.com版）
+# デプロイ手順
 
-## 準備
+サーバを立てなくても **GitHub Actions か手元の cron** で回せます（下の「2. サーバを使わない」参照）。
+毎日決まった時間に自動で動かしたい、という程度ならそちらで十分です。
 
-### 1. APIトークン取得
+## 0. 事前準備
 
-**Chatwork APIトークン：**
-- Chatwork管理画面 → サービス連携 → API
-- APIトークンを発行・コピー
+**Claude APIキー**
+- https://console.anthropic.com/account/keys で発行
 
-**Claude APIキー：**
-- https://console.anthropic.com/account/keys
-- APIキーを発行・コピー
-
-### 2. GitHubにアップロード
+**note のログイン情報（Cookie）**
 ```bash
-# ローカルで実行
-git init
-git add .
-git commit -m "Initial Chatwork Bot"
-git remote add origin https://github.com/YOU/chatwork-bot.git
-git push -u origin main
+npm install
+npx playwright install chromium
+npm run note:login                 # ブラウザで note にログイン
+base64 -w0 data/note-auth.json     # mac は base64 -i data/note-auth.json
 ```
+出てきた文字列をシークレット `NOTE_AUTH_STATE_B64` として使います。
 
-### 3. Render.comでデプロイ
+## 1. Render.com で常駐させる
 
-1. https://render.com にアクセス → 無料アカウント作成
-2. **New → Web Service**
-3. GitHubリポジトリを接続
-4. 設定：
-   - **Build Command**: `npm install`
+1. https://render.com でアカウント作成 → **New → Web Service**
+2. GitHub リポジトリを接続
+3. 設定：
+   - **Build Command**: `npm install && npx playwright install --with-deps chromium`
    - **Start Command**: `npm start`
-5. **Environment Variables** に追加：
+   - **Disk**: マウント先 `/var/data`（Cookie と記事履歴の保存先。無いと毎回同じネタを書きます）
+4. **Environment Variables**：
    ```
-   CHATWORK_TOKEN=（コピペ）
    CLAUDE_API_KEY=（コピペ）
-   ```
-6. **Create Web Service** → デプロイ完了
-
-**デプロイURLが取得される** → これをChatwork Webhook URLに設定
-
-### 4. Chatwork Webhook設定
-
-- Webhook URL: `https://your-service-name.onrender.com/webhook`
-- Webhook名: `Botti`
-- イベント: `アカウントイベント`
-- 保存
-
-### 5. 使用方法
-
-Chatworkで：
-```
-@Botti 来週の予定をまとめて
-```
-
-→ Botが自動応答 ✓
-
----
-
-## トラブル対応
-
-**Botが応答しない場合：**
-- Render ログ確認 → Messages タブ
-- `curl -X POST https://your-url/webhook -d '{"body":"test"}' -H 'Content-Type: application/json'`
-
-**料金：**
-- Render: $7/月（無料枠は2つまで）
-- Claude API: 使用量に応じて課金（従量制）
-
----
-
-## note 自動投稿を有効にする
-
-このリポジトリには note へ記事を自動投稿する仕組みが入っています（[NOTE_AUTOPOST.md](NOTE_AUTOPOST.md)）。
-Render で動かす場合の追加設定：
-
-1. **Build Command** を `npm install && npx playwright install --with-deps chromium` に変更
-   （note の投稿はブラウザ操作で行うため Chromium が必要）
-2. **Disk** を追加してマウント先を `/var/data` にする（Cookie と記事履歴の保存先）
-3. Environment Variables に追加：
-   ```
+   NOTE_AUTH_STATE_B64=（上で作った文字列）
    DATA_DIR=/var/data
-   CHATWORK_ROOM_ID=（通知先の部屋ID）
    NOTE_PUBLISH_MODE=draft
    AUTO_POST_ENABLED=true
    AUTO_POST_CRON=0 8 * * *
    TZ=Asia/Tokyo
-   NOTE_AUTH_STATE_B64=（ローカルで `npm run note:login` → `base64 -w0 data/note-auth.json`）
+   CRON_SECRET=（任意の文字列）
    ```
-4. デプロイ後、`https://your-service.onrender.com/health` で状態を確認
+5. **Create Web Service** → デプロイ
 
-サーバを持ちたくない場合は GitHub Actions（`.github/workflows/note-auto-post.yml`）だけでも回ります。
+確認とふだんの操作：
+
+```bash
+curl https://your-service.onrender.com/health
+curl -H "x-cron-secret: <CRON_SECRET>" https://your-service.onrender.com/drafts
+curl -X POST -H "x-cron-secret: <CRON_SECRET>" https://your-service.onrender.com/posts/<ID>/publish
+```
+
+**料金**: Render は $7/月（無料枠はスリープするので定期実行が飛びます）。
+Claude API は1記事あたり5〜15円程度の従量課金。
+
+## 2. サーバを使わない
+
+**GitHub Actions**（無料枠で足ります）
+
+リポジトリの Settings → Secrets に `CLAUDE_API_KEY` と `NOTE_AUTH_STATE_B64` を登録すれば、
+`.github/workflows/note-auto-post.yml` が毎日 8:00 JST に1本作ります。
+手動で流したいときは Actions タブから「note 自動投稿」→ Run workflow。
+
+**手元の PC の cron**
+
+```
+0 8 * * * cd /path/to/note-auto-post && /usr/bin/npm run note:run >> data/cron.log 2>&1
+```
+
+## 3. トラブル対応
+
+| 症状 | 対処 |
+| --- | --- |
+| `note にログインしていません` | Cookie の期限切れ。`npm run note:login` → `NOTE_AUTH_STATE_B64` を入れ直す |
+| ブラウザが起動しない | Build Command の `npx playwright install --with-deps chromium` を確認 |
+| 同じネタばかり書く | `DATA_DIR` が永続ディスクを向いているか確認（`data/state.json` が消えている） |
+| 投稿が途中で止まる | `data/shots/` のスクリーンショットを確認。詳細は [NOTE_AUTOPOST.md](NOTE_AUTOPOST.md) |
+
+※ 以前あった Chatwork ボットのデプロイ手順は git の履歴に残っています（`git show 5deafb2:DEPLOY.md`）。
