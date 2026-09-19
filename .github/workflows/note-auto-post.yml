@@ -42,6 +42,7 @@ jobs:
       - name: 記事を作って投稿する
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          # 通知なしで使うなら、以下のシークレットは未登録のままでよい
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_TO: ${{ secrets.LINE_TO }}
           NOTIFY_WEBHOOK_URL: ${{ secrets.NOTIFY_WEBHOOK_URL }}

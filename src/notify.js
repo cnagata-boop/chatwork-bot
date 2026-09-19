@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const axios = require('axios');
 const { config } = require('./config');
 const log = require('./logger');
@@ -54,16 +55,43 @@ async function sendWebhook(text, title) {
   }
 }
 
+/** GitHub Actions の実行結果ページに出す形にする（URLがリンクになる） */
+function toMarkdown(title, lines = []) {
+  const body = lines
+    .filter(Boolean)
+    .map((line) => `${line}  `) // 行末2スペースで改行を保つ
+    .join('\n');
+  return `## ${title}\n\n${body}\n`;
+}
+
 /**
- * お知らせを出す。設定してある宛先に送り、いつでもログには残す。
+ * GitHub Actions で動いているときは、実行結果ページに下書きのURLを残す。
+ * 通知を使わない運用でも「今日は何ができたか」を後から追える。
+ */
+function writeStepSummary(title, lines) {
+  const file = process.env.GITHUB_STEP_SUMMARY;
+  if (!file) return false;
+  try {
+    fs.appendFileSync(file, `${toMarkdown(title, lines)}\n`, 'utf8');
+    return true;
+  } catch (error) {
+    log.warn(`実行結果ページへの書き込みに失敗しました: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * お知らせを出す。既定はログに残すだけ（通知なし運用）。
+ * LINE や Webhook を設定していればそこにも送る。
  * 送信に失敗しても処理は止めない（記事はもう note に保存されているため）。
  */
 async function notify(title, lines = []) {
   const text = [title, ...lines.filter(Boolean)].join('\n');
   log(`\n${text}\n`);
+  writeStepSummary(title, lines);
 
   const results = await Promise.all([sendLine(text), sendWebhook(text, title)]);
   return { text, sent: results.some(Boolean) };
 }
 
-module.exports = { notify, trimForLine, LINE_MAX_CHARS };
+module.exports = { notify, toMarkdown, writeStepSummary, trimForLine, LINE_MAX_CHARS };

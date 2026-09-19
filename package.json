@@ -10,6 +10,7 @@
     "note:generate": "node src/cli.js generate",
     "note:run": "node src/cli.js run",
     "note:list": "node src/cli.js list",
+    "note:drafts": "node src/cli.js drafts",
     "note:report": "node src/cli.js report",
     "test": "node --test test/*.test.js"
   },

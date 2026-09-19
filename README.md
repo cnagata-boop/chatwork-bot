@@ -4,10 +4,12 @@
 手元（またはサーバ・GitHub Actions）だけで完結します。
 
 ```
-ネタ帳 ──▶ Claude が執筆 ──▶ 検品 ──▶ note に下書き保存 ──▶ LINE に通知
-                                                           │
-                              スマホの note アプリで読んで「公開」 ─┘
+ネタ帳 ──▶ Claude が執筆 ──▶ 検品 ──▶ note に下書き保存
+                                            │
+        朝、note アプリの「下書き」を開いて読む ─┘ → よければ公開ボタン
 ```
+
+通知は既定でオフです。外部サービスの登録も設定も要りません。
 
 既定では **下書きまで**しか進みません。中身を自分で見てから公開する運用が前提です
 （丸投げの自動公開は note 側のスパム判定リスクがあり、収益にもつながりにくいため）。
@@ -37,7 +39,8 @@ npm run note:run            # 執筆して note に下書き保存
 | `npm run note -- reject <ID>` | 下書きを不採用にする |
 | `npm run note -- topics --refill 10` | ネタ帳を Claude に補充させる |
 | `npm run note:report` | PV・公開本数のレポート |
-| `npm run note -- notify-test` | LINE などにお知らせが届くか試す |
+| `npm run note:drafts` | 公開待ちの下書きをURL付きで表示 |
+| `npm run note -- notify-test` | 通知を設定した場合に、届くか試す |
 | `npm test` | 動作確認（外部APIを叩かない範囲） |
 
 ## 自動で回す
@@ -46,17 +49,22 @@ npm run note:run            # 執筆して note に下書き保存
 - **サーバ常駐**: `npm start` + `AUTO_POST_ENABLED=true` / `AUTO_POST_CRON=0 8 * * *`
 - **外部スケジューラ**: `POST /cron/post`（ヘッダ `x-cron-secret`）
 
-## LINE に通知する（おすすめ）
+## 毎朝やること
 
-`LINE_CHANNEL_ACCESS_TOKEN` を入れておくと、下書きができたときに LINE へURLが届きます。
-あとはスマホの note アプリで中身を見て、公開ボタンを押すだけ。設定手順は
-[NOTE_AUTOPOST.md](NOTE_AUTOPOST.md#line-に通知するおすすめ無料) にあります（5分・無料）。
+スマホの note アプリを開く → 「下書き」に今日の記事がある → 読む → 公開ボタン。以上です。
+
+PC から確認したいときは：
 
 ```bash
-npm run note -- notify-test   # 届くか確認
+npm run note:drafts    # 公開待ちの下書きをURL付きで表示
 ```
 
-未設定ならログに出るだけで、外部には何も送りません。Slack / Discord 派は `NOTIFY_WEBHOOK_URL`。
+GitHub Actions で回している場合は、実行結果のページにその日の下書きURLが残ります
+（Actions タブ → 実行をクリック）。失敗したときだけ GitHub から自動でメールが届きます。
+
+通知を使いたくなったら `LINE_CHANNEL_ACCESS_TOKEN`（LINE）か `NOTIFY_WEBHOOK_URL`
+（Slack / Discord）を `.env` に足すだけで有効になります。手順は
+[NOTE_AUTOPOST.md](NOTE_AUTOPOST.md) に書いてあります。
 
 詳しい手順・小遣い稼ぎとしての設計・トラブル対応は **[NOTE_AUTOPOST.md](NOTE_AUTOPOST.md)**、
 サーバへのデプロイは [DEPLOY.md](DEPLOY.md) を見てください。

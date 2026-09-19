@@ -8,7 +8,8 @@ process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync('/tmp/note-test-')
 
 const generator = require('../src/generator');
 const store = require('../src/store');
-const { notify, trimForLine, LINE_MAX_CHARS } = require('../src/notify');
+const { notify, trimForLine, toMarkdown, writeStepSummary, LINE_MAX_CHARS } = require('../src/notify');
+const path = require('node:path');
 const pipeline = require('../src/pipeline');
 const { app } = require('../src/server');
 
@@ -47,6 +48,32 @@ test('通知先が未設定ならログに出すだけで落ちない', async ()
   const result = await notify('テスト', ['1行目']);
   assert.strictEqual(result.sent, false);
   assert.match(result.text, /テスト\n1行目/);
+});
+
+test('GitHub Actions の実行結果ページに下書きURLを残す', () => {
+  const file = path.join(process.env.DATA_DIR, 'summary.md');
+  const original = process.env.GITHUB_STEP_SUMMARY;
+  process.env.GITHUB_STEP_SUMMARY = file;
+  try {
+    assert.strictEqual(writeStepSummary('下書きができました', ['https://note.com/notes/n1/edit']), true);
+    const written = fs.readFileSync(file, 'utf8');
+    assert.match(written, /## 下書きができました/);
+    assert.match(written, /https:\/\/note\.com\/notes\/n1\/edit/);
+  } finally {
+    if (original === undefined) delete process.env.GITHUB_STEP_SUMMARY;
+    else process.env.GITHUB_STEP_SUMMARY = original;
+  }
+});
+
+test('実行結果ページの指定がなければ何もしない', () => {
+  const original = process.env.GITHUB_STEP_SUMMARY;
+  delete process.env.GITHUB_STEP_SUMMARY;
+  try {
+    assert.strictEqual(writeStepSummary('タイトル', ['本文']), false);
+    assert.match(toMarkdown('タイトル', ['本文', '']), /^## タイトル\n\n本文  \n$/);
+  } finally {
+    if (original !== undefined) process.env.GITHUB_STEP_SUMMARY = original;
+  }
 });
 
 test('LINE の文字数上限で切り詰める', () => {

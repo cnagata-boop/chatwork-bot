@@ -40,6 +40,7 @@ note 自動投稿ツール
                             ネタ出し→執筆→note投稿まで1本流す（既定は下書きまで）
   generate [--topic "ネタ"] 原稿だけ作って画面に出す（note には触らない）
   show <id>                 保存した原稿の中身を表示する
+  drafts                    公開待ちの下書きをURL付きで一覧する
   list [--status draft] [--limit 20]
                             これまでの記事を一覧する
   publish <id>              下書きを公開する
@@ -94,6 +95,20 @@ async function main() {
       console.log(post.body);
       console.log(`\nタグ: ${(post.tags || []).join(' / ')}`);
       console.log(`状態: ${post.status}  URL: ${post.publishedUrl || post.editUrl || '-'}`);
+      break;
+    }
+
+    case 'drafts': {
+      const drafts = store.listPosts({ status: 'draft', limit: 20 });
+      if (!drafts.length) {
+        console.log('公開待ちの下書きはありません');
+        break;
+      }
+      for (const post of drafts) {
+        console.log(`\n${post.title}`);
+        console.log(`  ${post.editUrl || '(URLなし)'}`);
+        console.log(`  公開: npm run note -- publish ${post.id}`);
+      }
       break;
     }
 
