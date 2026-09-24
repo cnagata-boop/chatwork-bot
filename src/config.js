@@ -28,10 +28,22 @@ fs.mkdirSync(dataDir, { recursive: true });
 const config = {
   dataDir,
 
+  llm: {
+    // 'claude' か 'gemini'。空なら、置いてあるAPIキーから自動で決める
+    provider: (process.env.LLM_PROVIDER || '').toLowerCase(),
+  },
+
   claude: {
     apiKey: process.env.CLAUDE_API_KEY,
     model: process.env.CLAUDE_MODEL || 'claude-sonnet-5',
     maxTokens: toInt(process.env.CLAUDE_MAX_TOKENS, 4000),
+  },
+
+  // Google AI Studio の無料枠で回す場合はこちら
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY,
+    model: process.env.GEMINI_MODEL || 'gemini-flash-latest',
+    maxTokens: toInt(process.env.GEMINI_MAX_TOKENS, 4000),
   },
 
   notify: {
@@ -103,6 +115,7 @@ function requireConfig(keys) {
   if (missing.length) {
     const envNames = {
       'claude.apiKey': 'CLAUDE_API_KEY',
+      'gemini.apiKey': 'GEMINI_API_KEY',
       'note.email': 'NOTE_EMAIL',
       'note.password': 'NOTE_PASSWORD',
     };

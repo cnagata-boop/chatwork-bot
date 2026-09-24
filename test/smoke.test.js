@@ -9,9 +9,24 @@ process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync('/tmp/note-test-')
 const generator = require('../src/generator');
 const store = require('../src/store');
 const { notify, trimForLine, toMarkdown, writeStepSummary, LINE_MAX_CHARS } = require('../src/notify');
+const { resolveProvider, extractJson } = require('../src/llm');
 const path = require('node:path');
 const pipeline = require('../src/pipeline');
 const { app } = require('../src/server');
+
+test('置いてあるAPIキーから使うAIを決める', () => {
+  assert.strictEqual(resolveProvider({ geminiKey: 'g' }), 'gemini');
+  assert.strictEqual(resolveProvider({ claudeKey: 'c' }), 'claude');
+  assert.strictEqual(resolveProvider({ claudeKey: 'c', geminiKey: 'g' }), 'claude');
+  assert.strictEqual(resolveProvider({ provider: 'gemini', claudeKey: 'c' }), 'gemini');
+  assert.throws(() => resolveProvider({ provider: 'gpt' }), /LLM_PROVIDER/);
+});
+
+test('AIの返答からJSONを取り出す', () => {
+  assert.deepStrictEqual(extractJson('```json\n{"a":1}\n```'), { a: 1 });
+  assert.deepStrictEqual(extractJson('はい、こちらです {"a":[1,2]} 以上'), { a: [1, 2] });
+  assert.throws(() => extractJson('JSONではない返答'), /JSONが見つかりません/);
+});
 
 test('タグは # を外して重複を消し、上限で切る', () => {
   const tags = generator.normalizeTags(['#経理', '経理', 'AI 活用', '', 'a', 'b', 'c', 'd']);

@@ -1,7 +1,7 @@
 'use strict';
 
 const { config } = require('./config');
-const { completeJson } = require('./claude');
+const { completeJson } = require('./llm');
 const log = require('./logger');
 
 const PAID_MARKER = '───ここから有料エリア───';

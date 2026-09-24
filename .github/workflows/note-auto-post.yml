@@ -41,6 +41,10 @@ jobs:
 
       - name: 記事を作って投稿する
         env:
+          # 無料枠で回すなら GEMINI_API_KEY だけ登録すればよい
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           # 通知なしで使うなら、以下のシークレットは未登録のままでよい
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}

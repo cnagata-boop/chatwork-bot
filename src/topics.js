@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { config } = require('./config');
-const { completeJson } = require('./claude');
+const { completeJson } = require('./llm');
 const store = require('./store');
 const log = require('./logger');
 

@@ -23,7 +23,7 @@
 ```bash
 npm install
 npx playwright install chromium
-cp env.example .env         # CLAUDE_API_KEY を記入
+cp env.example .env         # GEMINI_API_KEY（無料）か CLAUDE_API_KEY を記入
 
 npm run note:login          # ブラウザが開くので note にログイン（Cookieを保存）
 npm run note -- generate    # まず原稿だけ見てみる（note には触らない）
@@ -43,6 +43,7 @@ npm run note:run            # 執筆して note に下書き保存
 | `npm run note -- reject <ID>` | 下書きを不採用にする |
 | `npm run note -- topics --refill 10` | ネタ帳を Claude に補充させる |
 | `npm run note:report` | PV・公開本数のレポート |
+| `npm run note -- models` | Gemini で使えるモデル名を一覧 |
 | `npm run note:drafts` | 公開待ちの下書きをURL付きで表示 |
 | `npm run note -- notify-test` | 通知を設定した場合に、届くか試す |
 | `npm test` | 動作確認（外部APIを叩かない範囲） |
@@ -52,6 +53,19 @@ npm run note:run            # 執筆して note に下書き保存
 - **GitHub Actions**（サーバ不要）: `.github/workflows/note-auto-post.yml`（毎日 8:00 JST）
 - **サーバ常駐**: `npm start` + `AUTO_POST_ENABLED=true` / `AUTO_POST_CRON=0 8 * * *`
 - **外部スケジューラ**: `POST /cron/post`（ヘッダ `x-cron-secret`）
+
+## お金をかけずに回す
+
+記事を書く AI は2つから選べます。**Gemini の無料枠なら完全に0円**で回せます
+（Google AI Studio でキーを取得。クレジットカード不要。Flash系で 15回/分・1,500回/日まで無料）。
+
+| | 費用 | 使い方 |
+| --- | --- | --- |
+| Gemini（無料枠） | 0円 | `.env` に `GEMINI_API_KEY` だけ入れる |
+| Claude | 1記事5〜15円 | `.env` に `CLAUDE_API_KEY` だけ入れる |
+
+置いたキーで自動的に切り替わります。両方入れる場合は `LLM_PROVIDER=gemini` のように明示します。
+note・GitHub Actions・Playwright はいずれも無料なので、他に費用はかかりません。
 
 ## 毎朝やること
 

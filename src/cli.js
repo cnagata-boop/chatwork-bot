@@ -6,6 +6,8 @@ const store = require('./store');
 const topicsLib = require('./topics');
 const noteClient = require('./note/client');
 const { notify } = require('./notify');
+const { currentProvider } = require('./llm');
+const gemini = require('./llm/gemini');
 const { fetchStats } = require('./note/stats');
 const log = require('./logger');
 
@@ -47,6 +49,7 @@ note 自動投稿ツール
   reject <id>               下書きを不採用にする
   topics [--refill 10] [--add "ネタ"]
                             ネタ帳の確認・補充・追加
+  models                    Gemini で使えるモデル名を一覧する（無料枠のモデル選び用）
   notify-test               お知らせ（LINEなど）が届くか試す
   stats                     note の PV などを取得する
   report [--send] [--days 7]
@@ -70,7 +73,7 @@ async function main() {
         dryRun: args.flags['dry-run'] === true,
         topic: typeof args.flags.topic === 'string' ? args.flags.topic : undefined,
       });
-      console.log(`\n${post.status}: ${post.title}`);
+      console.log(`\n${post.status}: ${post.title}（${currentProvider()} が執筆）`);
       console.log(post.publishedUrl || post.editUrl || '(未投稿)');
       console.log(`ID: ${post.id}`);
       break;
@@ -84,7 +87,7 @@ async function main() {
       console.log(`\n# ${post.title}\n`);
       console.log(post.body);
       console.log(`\nタグ: ${post.tags.join(' / ')}`);
-      console.log(`ID: ${post.id}`);
+      console.log(`ID: ${post.id}（${currentProvider()} が執筆）`);
       break;
     }
 
@@ -154,6 +157,15 @@ async function main() {
       const all = topicsLib.loadTopics();
       console.log(`\nネタ帳: ${all.length}件（未使用 ${all.filter((t) => !used.has(t)).length}件）`);
       all.filter((t) => !used.has(t)).slice(0, 20).forEach((t) => console.log(`- ${t}`));
+      break;
+    }
+
+    case 'models': {
+      const models = await gemini.listModels();
+      console.log('使えるモデル（GEMINI_MODEL に設定します）:\n');
+      for (const m of models) {
+        console.log(`${m.name}${m.displayName ? `  — ${m.displayName}` : ''}`);
+      }
       break;
     }
 

@@ -5,8 +5,9 @@
 
 ## 0. 事前準備
 
-**Claude APIキー**
-- https://console.anthropic.com/account/keys で発行
+**記事を書く AI のキー**（どちらか片方）
+- 無料で回すなら Gemini: https://aistudio.google.com/apikey （カード不要・0円）
+- 品質重視なら Claude: https://console.anthropic.com/account/keys （1記事5〜15円）
 
 **note のログイン情報（Cookie）**
 ```bash
@@ -27,7 +28,7 @@ base64 -w0 data/note-auth.json     # mac は base64 -i data/note-auth.json
    - **Disk**: マウント先 `/var/data`（Cookie と記事履歴の保存先。無いと毎回同じネタを書きます）
 4. **Environment Variables**：
    ```
-   CLAUDE_API_KEY=（コピペ）
+   GEMINI_API_KEY=（コピペ。Claude を使うなら CLAUDE_API_KEY）
    NOTE_AUTH_STATE_B64=（上で作った文字列）
    DATA_DIR=/var/data
    NOTE_PUBLISH_MODE=draft
@@ -53,8 +54,8 @@ Claude API は1記事あたり5〜15円程度の従量課金。
 
 **GitHub Actions**（無料枠で足ります）
 
-リポジトリの Settings → Secrets に `CLAUDE_API_KEY` と `NOTE_AUTH_STATE_B64`
-（LINE通知を使うなら `LINE_CHANNEL_ACCESS_TOKEN` も）を登録すれば、
+リポジトリの Settings → Secrets に `GEMINI_API_KEY`（または `CLAUDE_API_KEY`）と
+`NOTE_AUTH_STATE_B64` を登録すれば、
 `.github/workflows/note-auto-post.yml` が毎日 8:00 JST に1本作ります。
 手動で流したいときは Actions タブから「note 自動投稿」→ Run workflow。
 
