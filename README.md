@@ -25,6 +25,7 @@ npm install
 npx playwright install chromium
 cp env.example .env         # GEMINI_API_KEY（無料）か CLAUDE_API_KEY を記入
 
+npm run note:doctor         # 準備ができているか点検（足りないものと対処が出ます）
 npm run note:login          # ブラウザが開くので note にログイン（Cookieを保存）
 npm run note -- generate    # まず原稿だけ見てみる（note には触らない）
 npm run note:run            # 執筆して note に下書き保存
@@ -34,7 +35,9 @@ npm run note:run            # 執筆して note に下書き保存
 
 | コマンド | 何をするか |
 | --- | --- |
+| `npm run note:doctor` | 準備ができているか点検する（最初にこれ） |
 | `npm run note:login` | ブラウザで手動ログインして Cookie を保存 |
+| `npm run note -- check-note` | 投稿せずに note の画面が想定どおりか確かめる |
 | `npm run note:run` | ネタ出し→執筆→note に下書き保存（`--publish` で公開まで） |
 | `npm run note -- generate` | 原稿だけ作って表示（note には投稿しない） |
 | `npm run note:list` | これまでの記事と状態を一覧 |
@@ -89,5 +92,6 @@ GitHub Actions で回している場合は、実行結果のページにその�
 
 ---
 
-`chatwork-bot.js` はこのリポジトリに元からあった Chatwork ボットです。note の仕組みからは
-一切参照していません。使わないなら削除して構いません。
+このリポジトリは元 Chatwork ボット用でしたが、中身は note 自動投稿ツールに置き換わっています
+（旧ボットのコードは git の履歴に残っています）。リポジトリ名は Settings → Rename で
+変更できます。古いURLは自動転送されるので、名前を変えても壊れません。

@@ -10,6 +10,7 @@ const generator = require('../src/generator');
 const store = require('../src/store');
 const { notify, trimForLine, toMarkdown, writeStepSummary, LINE_MAX_CHARS } = require('../src/notify');
 const { resolveProvider, extractJson } = require('../src/llm');
+const doctor = require('../src/doctor');
 const path = require('node:path');
 const pipeline = require('../src/pipeline');
 const { app } = require('../src/server');
@@ -57,6 +58,29 @@ test('記事を保存して状態を更新できる', () => {
   store.updatePost(post.id, { status: 'published', publishedUrl: 'https://note.com/x/n/y' });
   assert.strictEqual(store.getPost(post.id).status, 'published');
   assert.ok(store.usedTopics().includes('ネタ'));
+});
+
+test('点検結果は、落ちた項目に対処方法を付けて並べる', () => {
+  const text = doctor.format([
+    { name: 'ブラウザ', ok: false, detail: '見つかりません', hint: 'npx playwright install chromium' },
+    { name: 'ネタ帳', ok: true, detail: '未使用 16件' },
+  ]);
+  assert.match(text, /✗ ブラウザ/);
+  assert.match(text, /→ npx playwright install chromium/);
+  assert.match(text, /✓ ネタ帳/);
+  assert.match(text, /1件、対応が必要です/);
+});
+
+test('全部通っていれば次にやることを示す', () => {
+  const text = doctor.format([{ name: 'ネタ帳', ok: true, detail: '未使用 16件' }]);
+  assert.match(text, /npm run note:run で1本作れます/);
+});
+
+test('点検は実際の設定を読んで結果を返す', () => {
+  const checks = doctor.collect();
+  assert.ok(checks.length >= 5);
+  assert.ok(checks.every((c) => typeof c.name === 'string' && typeof c.ok === 'boolean'));
+  assert.ok(checks.some((c) => c.name === '記事を書くAI'));
 });
 
 test('通知先が未設定ならログに出すだけで落ちない', async () => {

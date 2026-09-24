@@ -79,8 +79,8 @@ async function firstVisible(page, selectors, { timeout = 8000 } = {}) {
   return null;
 }
 
-/** ボタン名の候補を上から試してクリック */
-async function clickByText(page, names, { timeout = 10000 } = {}) {
+/** ボタン名の候補を上から試して、最初に見つかったものを返す（押さない） */
+async function findByText(page, names, { timeout = 10000 } = {}) {
   for (const name of names) {
     const candidates = [
       page.getByRole('button', { name, exact: false }),
@@ -91,14 +91,21 @@ async function clickByText(page, names, { timeout = 10000 } = {}) {
       const target = locator.first();
       try {
         await target.waitFor({ state: 'visible', timeout: timeout / (names.length * 3) });
-        await target.click();
-        return name;
+        return { name, locator: target };
       } catch (_) {
         // 次の候補へ
       }
     }
   }
   return null;
+}
+
+/** ボタン名の候補を上から試してクリック */
+async function clickByText(page, names, options) {
+  const found = await findByText(page, names, options);
+  if (!found) return null;
+  await found.locator.click();
+  return found.name;
 }
 
 async function isLoggedIn(page) {
@@ -282,6 +289,57 @@ async function publishDraft(editUrl, tags = []) {
   }
 }
 
+/**
+ * 投稿せずに、note の画面が想定どおりかだけを確かめる。
+ * note の画面変更でセレクタがずれていないか、初回や不具合時に使う。
+ */
+async function checkEditor() {
+  const { browser, context } = await openBrowser();
+  try {
+    const page = await context.newPage();
+    const results = [];
+
+    await ensureLoggedIn(context, page);
+    results.push({ name: 'ログイン', ok: true, detail: 'できています' });
+
+    await page.goto(S.urls.newNote, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+
+    const title = await firstVisible(page, S.editor.title);
+    results.push({
+      name: 'タイトル欄',
+      ok: Boolean(title),
+      detail: title ? '見つかりました' : '見つかりません',
+    });
+
+    const body = await firstVisible(page, S.editor.body);
+    results.push({
+      name: '本文エリア',
+      ok: Boolean(body),
+      detail: body ? '見つかりました' : '見つかりません',
+    });
+
+    const save = await findByText(page, S.editor.saveDraft);
+    results.push({
+      name: '「下書き保存」ボタン',
+      ok: Boolean(save),
+      detail: save ? `「${save.name}」を確認` : '見つかりません',
+    });
+
+    const proceed = await findByText(page, S.editor.proceedToPublish);
+    results.push({
+      name: '「公開に進む」ボタン',
+      ok: Boolean(proceed),
+      detail: proceed ? `「${proceed.name}」を確認` : '見つかりません',
+    });
+
+    if (results.some((r) => !r.ok)) await screenshot(page, 'check-editor');
+    return results;
+  } finally {
+    await browser.close();
+  }
+}
+
 /** ブラウザを目の前で開いて、人間がログインし終わるのを待つ（2段階認証もこれで通る） */
 async function interactiveLogin({ waitMs = 240000 } = {}) {
   const { browser, context } = await openBrowser({ headless: false });
@@ -315,6 +373,8 @@ module.exports = {
   publishDraft,
   postArticle,
   interactiveLogin,
+  checkEditor,
   firstVisible,
+  findByText,
   clickByText,
 };

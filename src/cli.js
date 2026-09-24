@@ -7,6 +7,7 @@ const topicsLib = require('./topics');
 const noteClient = require('./note/client');
 const { notify } = require('./notify');
 const { currentProvider } = require('./llm');
+const doctor = require('./doctor');
 const gemini = require('./llm/gemini');
 const { fetchStats } = require('./note/stats');
 const log = require('./logger');
@@ -37,7 +38,9 @@ note 自動投稿ツール
   npm run note -- <コマンド> [オプション]
 
 コマンド:
+  doctor                    準備ができているかを点検する（最初にこれ）
   login                     ブラウザを開いて note に手動ログインし、Cookieを保存する
+  check-note                投稿せずに、note の画面が想定どおりか確かめる
   run [--publish] [--dry-run] [--topic "ネタ"]
                             ネタ出し→執筆→note投稿まで1本流す（既定は下書きまで）
   generate [--topic "ネタ"] 原稿だけ作って画面に出す（note には触らない）
@@ -61,6 +64,26 @@ async function main() {
   const command = args._[0] || 'help';
 
   switch (command) {
+    case 'doctor': {
+      console.log(doctor.format(doctor.collect()));
+      break;
+    }
+
+    case 'check-note': {
+      const results = await noteClient.checkEditor();
+      for (const r of results) {
+        console.log(`${r.ok ? '✓' : '✗'} ${r.name}: ${r.detail}`);
+      }
+      const ng = results.filter((r) => !r.ok);
+      console.log(
+        ng.length
+          ? `\n${ng.length}件が見つかりませんでした。note の画面が変わった可能性があります。`
+            + '\ndata/shots/ のスクリーンショットを見せてもらえれば直せます。'
+          : '\nnote の画面は想定どおりです。npm run note:run で投稿できます。',
+      );
+      break;
+    }
+
     case 'login': {
       await noteClient.interactiveLogin();
       log('完了しました。以後はこのCookieで自動投稿できます');

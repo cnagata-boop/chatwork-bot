@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "note": "node src/cli.js",
+    "note:doctor": "node src/cli.js doctor",
     "note:login": "node src/cli.js login",
     "note:generate": "node src/cli.js generate",
     "note:run": "node src/cli.js run",

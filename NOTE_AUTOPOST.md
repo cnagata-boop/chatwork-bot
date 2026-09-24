@@ -23,6 +23,7 @@ data/topics.json        ネタ帳（自分で足す or Claude が補充）
 | `src/note/selectors.js` | note の画面が変わったときに直す場所 |
 | `src/note/stats.js` | PV などの取得 |
 | `src/store.js` | 書いた記事の履歴（`data/state.json`） |
+| `src/doctor.js` | 準備ができているかの点検（`npm run note:doctor`） |
 | `src/notify.js` | お知らせ（既定はログのみ。LINE や Webhook を設定すればそこへ） |
 | `src/server.js` | 常駐させる場合の定期実行と `/health`・`/cron/*` |
 
@@ -104,6 +105,15 @@ Cookie が切れたら同じコマンドをもう一度実行します。
 
 2段階認証を使っていなければ `NOTE_EMAIL` / `NOTE_PASSWORD` を `.env` に入れておくと、
 Cookie が切れたときに自動で入り直します。
+
+### 準備ができたか点検する
+
+```bash
+npm run note:doctor
+```
+
+APIキー・ブラウザ・noteのログイン・ネタ帳・保存先をまとめて見て、足りないものと
+その対処を並べます。困ったらまずこれを実行してください。
 
 ### まず1本、目で見る
 
@@ -212,7 +222,7 @@ note・GitHub Actions・Playwright は無料なので、稼げるまでは無料
 | 症状 | 対処 |
 | --- | --- |
 | `ログインしていません` | `npm run note:login` をやり直す。Cookie は数週間で切れます |
-| `エディタのタイトル欄が見つかりません` | note の画面変更。`src/note/selectors.js` のセレクタを追加すれば直ります |
+| `エディタのタイトル欄が見つかりません` | note の画面変更。`npm run note -- check-note` でどこがずれたか分かります。`src/note/selectors.js` にセレクタを足せば直ります |
 | 投稿が途中で止まる | `data/shots/` に失敗時のスクリーンショットが残ります。`NOTE_HEADLESS=false` で動きを目視できます |
 | 見出しや箇条書きが反映されない | エディタの入力は1行ずつ打って書式ショートカットを効かせています。`NOTE_SLOW_MO=50` を試してください |
 | 統計が取れない | note 側の内部APIの仕様変更。取れなくても投稿自体は動きます |
