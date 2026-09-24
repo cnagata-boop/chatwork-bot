@@ -64,10 +64,16 @@ const config = {
   },
 
   content: {
-    persona: process.env.CONTENT_PERSONA || '中小企業の経理・バックオフィス改善を手伝ってきた実務家',
-    audience: process.env.CONTENT_AUDIENCE || '中小企業の経理担当者・個人事業主',
-    theme: process.env.CONTENT_THEME || '経理業務の効率化とAI活用',
-    tone: process.env.CONTENT_TONE || '具体例が多く、手を動かせる実務寄りの語り口',
+    // 個人アカウントとしての発信。勤務先や顧問先の名前は出さない前提で書かせる
+    persona: process.env.CONTENT_PERSONA
+      || '小さな会社の経理を実務で回してきた人。肩書きではなく作業内容で語り、勤務先や取引先の名前は出さない',
+    // 「自分の財布で時間を買う人」に向けて書く。読者を1人に絞ると文章が安定する
+    audience: process.env.CONTENT_AUDIENCE
+      || '社員数人の会社のひとり社長、または個人事業主。経理は自分か家族がやっていて、'
+      + '会計ソフトは入れたが使いこなせていない。税理士はいるが月1回しか会わない',
+    theme: process.env.CONTENT_THEME || 'ひとりで経理を回す人の作業を、AIとツールで減らす方法',
+    tone: process.env.CONTENT_TONE
+      || '読者1人に話しかける口調。手順と数字が具体的で、読んだその日に真似できる',
     minChars: toInt(process.env.CONTENT_MIN_CHARS, 1200),
     maxChars: toInt(process.env.CONTENT_MAX_CHARS, 3000),
     // true にすると「無料パート＋有料パート」の構成で書かせる。
