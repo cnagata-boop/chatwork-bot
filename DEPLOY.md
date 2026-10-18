@@ -8,7 +8,11 @@
 - Chatwork管理画面 → サービス連携 → API
 - APIトークンを発行・コピー
 
-**Claude APIキー：**
+**OpenAI（ChatGPT）APIキー：**
+- https://platform.openai.com/api-keys
+- APIキーを発行・コピー
+
+**Claude APIキー（Claudeを使う場合のみ）：**
 - https://console.anthropic.com/account/keys
 - APIキーを発行・コピー
 
@@ -33,7 +37,12 @@ git push -u origin main
 5. **Environment Variables** に追加：
    ```
    CHATWORK_TOKEN=（コピペ）
-   CLAUDE_API_KEY=（コピペ）
+   AI_PROVIDER=openai
+   OPENAI_API_KEY=（コピペ）
+   OPENAI_MODEL=gpt-4o-mini   # 省略可
+   ```
+   Claudeを使う場合は `AI_PROVIDER=claude` と `CLAUDE_API_KEY` を設定
+   ```
    ```
 6. **Create Web Service** → デプロイ完了
 
@@ -65,4 +74,4 @@ Chatworkで：
 
 **料金：**
 - Render: $7/月（無料枠は2つまで）
-- Claude API: 使用量に応じて課金（従量制）
+- OpenAI API / Claude API: 使用量に応じて課金（従量制）
