@@ -60,20 +60,26 @@ function askAI(userMessage) {
 // Webhookエンドポイント
 app.post('/webhook', async (req, res) => {
   try {
-    const { webhook_event_id, account_id, from_account_id, body, room_id } = req.body;
+    // Chatwork Webhookはメッセージ情報を webhook_event の中に入れて送ってくる
+    const event = req.body.webhook_event || req.body;
+    const { from_account_id, body, room_id, message_id } = event;
+    const isMention = req.body.webhook_event_type === 'mention_to_me';
 
     // メッセージ本文を取得
     if (!body) {
       return res.status(200).json({ status: 'ok' });
     }
 
-    // "@Botti" で始まるメッセージのみ処理
-    if (!body.includes('@Botti')) {
+    // Botへのメンション（[To:...]）または "@Botti" を含むメッセージのみ処理
+    if (!isMention && !body.includes('@Botti')) {
       return res.status(200).json({ status: 'ok' });
     }
 
-    // @Botti を削除してAIに送信
-    const userMessage = body.replace(/@Botti\s*/g, '').trim();
+    // [To:...] / [rp ...] / @Botti を削除してAIに送信
+    const userMessage = body
+      .replace(/\[(To|rp)[^\]]*\]/g, '')
+      .replace(/@Botti\s*/g, '')
+      .trim();
 
     // AIに送信
     const aiResponse = await askAI(userMessage);
@@ -81,7 +87,8 @@ app.post('/webhook', async (req, res) => {
     // Chatworkに返信
     await axios.post(
       `${CHATWORK_API_BASE}/rooms/${room_id}/messages`,
-      { body: `[rp aid=${from_account_id}]\n${aiResponse}` },
+      // Chatwork APIはフォーム形式で受け付ける
+      new URLSearchParams({ body: `[rp aid=${from_account_id} to=${room_id}-${message_id}]\n${aiResponse}` }),
       {
         headers: {
           'X-ChatWorkToken': CHATWORK_TOKEN
