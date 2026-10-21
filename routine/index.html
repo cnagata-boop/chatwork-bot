@@ -421,6 +421,15 @@ body { background-color: var(--bg) !important;
 .sj span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sj b { font-size: 16px; color: var(--c); }
 .sj.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--paper)); font-weight: 700; }
+.studyin input { width: 84px; font-family: var(--f-num); font-size: 18px !important; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); }
+.chart text { font-size: 17px; }
+.acc { display: flex; flex-direction: column; gap: 14px; }
+.accrow { display: flex; flex-direction: column; gap: 5px; }
+.acchead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.acchead b { font-family: var(--f-display); font-size: 16px; color: var(--c); }
+.acchead .big { font-size: 24px; font-weight: 500; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; }
+.accbar { height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden; }
+.accbar i { display: block; height: 100%; background: var(--c); border-radius: 4px; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -470,6 +479,12 @@ body { background-color: var(--bg) !important;
 
   <section class="habits" id="habits" aria-label="ルーティン"></section>
 
+  <section class="panel" aria-label="勉強の積み上げ">
+    <div class="phead"><h2>勉強の積み上げ</h2><span class="label num" id="stTotal"></span></div>
+    <div class="acc" id="acc"></div>
+    <div class="chart" id="studyChart"></div>
+  </section>
+
   <section class="panel" aria-label="今週">
     <div class="phead"><h2>今週のがんばり</h2><span class="label" id="ticketInfo"></span></div>
     <div class="week" id="week"></div>
@@ -512,9 +527,9 @@ body { background-color: var(--bg) !important;
     <div class="settings">
       <label for="target">目標体重（kg）<input id="target" type="number" step="0.1" inputmode="decimal" placeholder="例 55.0"></label>
       <div class="label" style="margin-top:6px">勉強の3科目の名前</div>
-      <label for="subj-0">科目1<input id="subj-0" data-sname="0" type="text" maxlength="12" placeholder="例：英語"></label>
-      <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="例：簿記"></label>
-      <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="例：資格"></label>
+      <label for="subj-0">科目1<input id="subj-0" data-sname="0" type="text" maxlength="12" placeholder="国徴"></label>
+      <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="簿記論"></label>
+      <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="財表"></label>
       <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
       <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
       <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
@@ -578,7 +593,9 @@ body { background-color: var(--bg) !important;
       <defs><radialGradient id="pearl" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#f3ece6"/><stop offset="1" stop-color="#d9cfe0"/></radialGradient></defs></svg>`;
   }
   const QUOTES = ["小さな一歩も、毎日なら大きな道になる。", "完璧じゃなくていい。ゼロにしないのが大事。", "今日の自分は、きのうの自分より少しだけ前へ。", "続けた日数は、ちゃんと自分の味方になる。", "疲れた日は1つだけでも花まる。", "ストレッチ1分でも、体はちゃんと喜んでる。", "がんばった自分を、今日もほめてあげよう。", "習慣は、ゆっくり育つ植物みたいなもの。"];
-  const subjects = () => [0, 1, 2].map(i => (state.settings.subjects || [])[i] || `科目${i + 1}`);
+  const SUBJ_DEFAULT = ["国徴", "簿記論", "財表"], SUBJ_COLOR = ["--study", "--stretch", "--weight"];
+  const subjects = () => [0, 1, 2].map(i => (state.settings.subjects || [])[i] || SUBJ_DEFAULT[i]);
+  const hm = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}時間${r}分` : `${h}時間`) : `${r}分`; };
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
@@ -890,7 +907,7 @@ body { background-color: var(--bg) !important;
     const left = ticketLeft(state.selected);
     $("dayBtns").innerHTML = `<button class="btn ${d.easy ? "on" : ""}" data-easy>${d.easy ? "ゆるモード中" : "疲れた日はゆるモード"}</button>` +
       (d.rest ? `<button class="btn on" data-rest>お休みの日（取り消す）</button>` : c === 0 && left ? `<button class="btn" data-rest>お休みチケットを使う</button>` : "");
-    renderNudge(); renderWeek();
+    renderNudge(); renderWeek(); renderStudy();
     if (!$("nudge").hidden) { const rb = $("dayBtns").querySelector("[data-rest]"); if (rb && !d.rest) rb.remove(); }
   }
   function renderNudge() {
@@ -901,6 +918,28 @@ body { background-color: var(--bg) !important;
     el.className = "nudge"; el.hidden = false;
     el.innerHTML = `<b>きのうの記録がまだです</b><p>やったのに付け忘れていたら、今からつけられます。${left ? "休んだ日なら、お休みチケット（週に1枚）で連続記録を守れます。" : "今週のお休みチケットは使用済みです。"}</p>
       <div class="btnrow"><button class="btn main" data-goto="${y}">きのうの分をつける</button>${left ? `<button class="btn" data-restday="${y}">お休みチケットを使う</button>` : ""}</div>`;
+  }
+  function renderStudy() {
+    const names = subjects(), t = todayKey(), wk = weekKeys(t), mon = t.slice(0, 7);
+    const sum = (i, pred) => Object.entries(state.days).reduce((a, [k, x]) => a + (pred(k) ? subjMin(x, i) : 0), 0);
+    const tot = [0, 1, 2].map(i => sum(i, () => true)), all = tot.reduce((a, b) => a + b, 0) || 1;
+    $("stTotal").textContent = `合計 ${hm(tot[0] + tot[1] + tot[2])}`;
+    $("acc").innerHTML = names.map((n, i) => `<div class="accrow" style="--c: var(${SUBJ_COLOR[i]})">
+      <div class="acchead"><b>${n}</b><span class="big num">${hm(tot[i])}</span></div>
+      <div class="accbar"><i style="width:${Math.round(tot[i] / all * 100)}%"></i></div>
+      <div class="diff">今日 ${hm(sum(i, k => k === t))}・今週 ${hm(sum(i, k => wk.includes(k)))}・今月 ${hm(sum(i, k => k.startsWith(mon)))}</div></div>`).join("");
+    // last 14 days, stacked by subject
+    const ks = Array.from({ length: 14 }, (_, j) => addDays(t, j - 13));
+    const vals = ks.map(k => [0, 1, 2].map(i => subjMin(day(k), i)));
+    const mx = Math.max(60, ...vals.map(v => v[0] + v[1] + v[2]));
+    const top = Math.ceil(mx / 60) * 60, W = 600, H = 190, L = 40, R = 8, T = 10, B = 26, bw = (W - L - R) / 14;
+    const y = v => T + (1 - v / top) * (H - T - B);
+    let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="直近14日の科目別勉強時間">`;
+    [0, top / 2, top].forEach(v => { g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${v / 60}h</text>`; });
+    vals.forEach((v, j) => { let acc = 0; const x = L + j * bw + bw * .18, w = bw * .64;
+      v.forEach((m, i) => { if (!m) return; g += `<rect x="${x.toFixed(1)}" y="${y(acc + m).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(acc) - y(acc + m)).toFixed(1)}" rx="2" fill="var(${SUBJ_COLOR[i]})"/>`; acc += m; });
+      if (j % 2 === 1 || j === 13) { const d = parseKey(ks[j]); g += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${d.getMonth() + 1}/${d.getDate()}</text>`; } });
+    $("studyChart").innerHTML = g + "</svg>";
   }
   function renderWeek() {
     const t = todayKey(), ks = weekKeys(t), goal = state.settings.weekGoal || 5;
@@ -931,12 +970,14 @@ body { background-color: var(--bg) !important;
         const running = !!timer.id;
         const names = subjects(), sel = state.subj || 0;
         const totals = [0, 1, 2].map(i => Object.values(state.days).reduce((a, x) => a + subjMin(x, i), 0));
-        extra += `<div class="subj" role="group" aria-label="科目をえらぶ">${names.map((n, i) => `<button class="sj ${i === sel ? "on" : ""}" data-subj="${i}" aria-pressed="${i === sel}"><span>${n}</span><b class="num">${subjMin(d, i)}分</b></button>`).join("")}</div>
-          <div class="row"><span class="diff">「${names[sel]}」に</span>
-          <button class="chip" data-add="15">+15分</button><button class="chip" data-add="30">+30分</button>
+        extra += `<div class="subj" role="group" aria-label="科目をえらぶ">${names.map((n, i) => `<button class="sj ${i === sel ? "on" : ""}" style="--c: var(${SUBJ_COLOR[i]})" data-subj="${i}" aria-pressed="${i === sel}"><span>${n}</span><b class="num">${subjMin(d, i)}分</b></button>`).join("")}</div>
+          <div class="row studyin"><span class="diff">「${names[sel]}」に</span>
+          <input id="studyIn" type="number" min="1" max="720" step="1" inputmode="numeric" placeholder="例 90" aria-label="${names[sel]}の勉強時間（分）"><span class="diff">分</span>
+          <button class="chip primary" data-sadd>記録</button></div>
+          <div class="row"><button class="chip" data-add="15">+15分</button><button class="chip" data-add="30">+30分</button><button class="chip" data-add="60">+1時間</button>
           <button class="chip primary" data-timer>${running ? `止める <span class="timer" id="timerText" style="color:inherit">25:00</span>` : "25分タイマー"}</button>
           ${subjMin(d, sel) ? '<button class="chip" data-add="0">取り消し</button>' : ""}</div>
-          <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${d.studyMin || 0}分</b> / 目標 ${goal}分　・　累計 ${names.map((n, i) => `${n} ${(totals[i] / 60).toFixed(1)}h`).join("・")}</div>`;
+          <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${hm(d.studyMin || 0)}</b> / 目標 ${goal}分　・　積み上げ ${names.map((n, i) => `${n} ${hm(totals[i])}`).join("・")}</div>`;
       }
       if (h.id === "weight") {
         const prev = lastWeightBefore(k);
@@ -1081,6 +1122,10 @@ body { background-color: var(--bg) !important;
     } else if (b.dataset.add != null) {
       const i = state.subj || 0, add = Number(b.dataset.add);
       addStudy(k, i, add ? add : -subjMin(day(k), i));
+    } else if (b.hasAttribute("data-sadd")) {
+      const v = Math.round(Number($("studyIn").value));
+      if (!(v >= 1 && v <= 720)) { toast("1〜720 の分数で入れてください（例：90）"); return; }
+      addStudy(k, state.subj || 0, v); toast(`${subjects()[state.subj || 0]}に ${hm(v)} を記録しました`);
     } else if (b.dataset.subj != null) {
       state.subj = Number(b.dataset.subj); renderHabits();
     } else if (b.hasAttribute("data-timer")) {
@@ -1112,6 +1157,7 @@ body { background-color: var(--bg) !important;
     if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
     if (dx > 0) selectDay(addDays(state.selected, -1)); else if (state.selected < todayKey()) selectDay(addDays(state.selected, 1));
   }, { passive: true });
+  $("habits").addEventListener("keydown", e => { if (e.target.id === "studyIn" && e.key === "Enter") { e.preventDefault(); document.querySelector("[data-sadd]").click(); } });
   $("habits").addEventListener("keydown", e => { if (e.target.id === "weightIn" && e.key === "Enter") { e.preventDefault(); saveWeight(); } });
   function saveWeight() {
     const k = state.selected, v = parseFloat($("weightIn").value);
