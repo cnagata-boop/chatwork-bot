@@ -6,45 +6,55 @@
 <style>
 /* Layout: one narrow column like a sticker notebook. Today's ring and five habit cards first, then calendar, weight chart and badges. */
 :root {
-  --bg: #eef3f7;
+  --bg: #fff7fb;
   --paper: #ffffff;
-  --ink: #1d2a3a;
-  --muted: #5d6b7c;
-  --line: #d9e2ea;
-  --soft: #e5ecf2;
-  --accent: #0f6f6a;
+  --ink: #2b1d3a;
+  --muted: #7a6a8a;
+  --line: #f1dcea;
+  --soft: #fbeaf4;
+  --accent: #ff3d8b;
   --accent-ink: #ffffff;
-  --study: #3a66d6;
-  --exercise: #e27a12;
-  --stretch: #23955f;
-  --beauty: #d24a8e;
-  --weight: #12839a;
-  --gold: #c99300;
-  --shadow: 0 1px 0 rgba(29, 42, 58, .06), 0 6px 18px -10px rgba(29, 42, 58, .25);
+  --study: #3d6bff;
+  --exercise: #ff8a00;
+  --stretch: #10b871;
+  --beauty: #ff4fa3;
+  --weight: #00aecf;
+  --gold: #ffb800;
+  --blob1: #ffe15c; --blob2: #7fe3ff; --blob3: #ffa6d2; --blob4: #a8f0c6;
+  --shadow: 0 2px 0 rgba(255, 61, 139, .08), 0 10px 24px -12px rgba(120, 40, 140, .35);
   --f-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   --f-body: "M PLUS 2", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
   --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111821; --paper: #18222e; --ink: #e8eef4; --muted: #9aa9b8; --line: #2a3746; --soft: #213040;
-    --accent: #3fc1b7; --accent-ink: #0b1a1a;
-    --study: #7c9cf5; --exercise: #f5a04a; --stretch: #4fca8c; --beauty: #f07bb6; --weight: #4cc3d9; --gold: #f0c445;
-    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 20px -12px rgba(0,0,0,.7);
+    --bg: #1a1430; --paper: #241c40; --ink: #f6efff; --muted: #b4a6cf; --line: #3a2f5c; --soft: #2f2650;
+    --accent: #ff5ea0; --accent-ink: #1a0f20;
+    --study: #7d9bff; --exercise: #ffa53d; --stretch: #3ee39a; --beauty: #ff7ec0; --weight: #3fd6f0; --gold: #ffcf3d;
+    --blob1: #5a3d8a; --blob2: #1f4f7a; --blob3: #7a2f63; --blob4: #1f5a4a;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 24px -12px rgba(0,0,0,.8);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111821; --paper: #18222e; --ink: #e8eef4; --muted: #9aa9b8; --line: #2a3746; --soft: #213040;
-  --accent: #3fc1b7; --accent-ink: #0b1a1a;
-  --study: #7c9cf5; --exercise: #f5a04a; --stretch: #4fca8c; --beauty: #f07bb6; --weight: #4cc3d9; --gold: #f0c445;
-  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 20px -12px rgba(0,0,0,.7);
+    --bg: #1a1430; --paper: #241c40; --ink: #f6efff; --muted: #b4a6cf; --line: #3a2f5c; --soft: #2f2650;
+  --accent: #ff5ea0; --accent-ink: #1a0f20;
+  --study: #7d9bff; --exercise: #ffa53d; --stretch: #3ee39a; --beauty: #ff7ec0; --weight: #3fd6f0; --gold: #ffcf3d;
+  --blob1: #5a3d8a; --blob2: #1f4f7a; --blob3: #7a2f63; --blob4: #1f5a4a;
+  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 24px -12px rgba(0,0,0,.8);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--ink);
-  background-image: radial-gradient(var(--line) 1px, transparent 1.2px); background-size: 22px 22px;
+  background-image:
+    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--blob1) 55%, transparent) 0, transparent 260px),
+    radial-gradient(circle at 96% 22%, color-mix(in srgb, var(--blob2) 50%, transparent) 0, transparent 280px),
+    radial-gradient(circle at 4% 58%, color-mix(in srgb, var(--blob3) 45%, transparent) 0, transparent 300px),
+    radial-gradient(circle at 92% 86%, color-mix(in srgb, var(--blob4) 55%, transparent) 0, transparent 300px),
+    radial-gradient(var(--line) 1.2px, transparent 1.6px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 22px 22px;
+  background-attachment: fixed;
   font-family: var(--f-body); font-size: 15px; line-height: 1.6;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -214,7 +224,7 @@ input, textarea { font-size: 16px !important; }
 .habit { position: relative; overflow: hidden; }
 .habit.done { background: color-mix(in srgb, var(--c) 10%, var(--paper)); }
 .check .ico { width: 30px; height: 30px; }
-.stamp { position: absolute; right: 12px; bottom: 10px; font-family: var(--f-display); font-weight: 900; font-size: 13px; color: var(--c); border: 2px solid var(--c); border-radius: 8px; padding: 0 8px; transform: rotate(-10deg); opacity: .85; pointer-events: none; }
+.stamp { position: absolute; left: 14px; bottom: 12px; font-family: var(--f-display); font-weight: 900; font-size: 13px; color: var(--c); border: 2px solid var(--c); border-radius: 8px; padding: 0 8px; transform: rotate(-10deg); opacity: .85; pointer-events: none; }
 .habit.pop .stamp { animation: stamp .4s ease; }
 @keyframes stamp { 0% { transform: rotate(-10deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-10deg) scale(1); opacity: .85; } }
 .plus { position: fixed; z-index: 16; pointer-events: none; font-family: var(--f-display); font-weight: 900; font-size: 18px; color: var(--c); animation: floatup .9s ease-out forwards; }
@@ -245,6 +255,30 @@ input, textarea { font-size: 16px !important; }
 .wgoal .xpbar i { background: var(--gold); }
 .day.rest { border-style: dashed; border-color: var(--muted); }
 .settings .plan input { width: 180px; font-family: var(--f-body); }
+/* pop color layer */
+.habit { background: color-mix(in srgb, var(--c) 7%, var(--paper)); border-color: color-mix(in srgb, var(--c) 30%, transparent); }
+.habit.done { background: color-mix(in srgb, var(--c) 22%, var(--paper)); border-color: var(--c); }
+.check { background: color-mix(in srgb, var(--c) 14%, var(--paper)); }
+.habit .hname { color: color-mix(in srgb, var(--c) 70%, var(--ink)); }
+.menu { background: color-mix(in srgb, var(--c) 12%, var(--paper)); }
+.shuffle { background: var(--paper); color: var(--c); font-weight: 700; }
+.chip { border-color: color-mix(in srgb, var(--c) 40%, transparent); }
+.hero { background: linear-gradient(var(--paper), var(--paper)) padding-box, linear-gradient(120deg, var(--study), var(--stretch), var(--gold), var(--exercise), var(--beauty)) border-box; border: 3px solid transparent; }
+.stat:nth-child(1) b { color: var(--beauty); } .stat:nth-child(2) b { color: var(--gold); } .stat:nth-child(3) b { color: var(--study); }
+.level .lv { background: linear-gradient(135deg, var(--accent), var(--exercise)); }
+.xpbar i { background: linear-gradient(90deg, var(--accent), var(--gold)); }
+.panel h2 { color: var(--accent); }
+.btn.main { background: linear-gradient(135deg, var(--accent), var(--exercise)); border: 0; color: #fff; }
+.week .w.has i { background: color-mix(in srgb, var(--accent) 25%, var(--paper)); }
+.nudge { border-color: var(--accent); }
+.qbtn .dot { background: color-mix(in srgb, var(--c) 14%, var(--paper)); }
+.quick { background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(8px); }
+.badge.got { background: color-mix(in srgb, var(--gold) 12%, var(--paper)); }
+.sky.t-morning { --s1: #ff9ec7; --s2: #ffe16b; --sky-ink: #4a1630; --orb: #fff3a0; }
+.sky.t-day     { --s1: #6fd6ff; --s2: #b6ffb0; --sky-ink: #0f3350; --orb: #ffe14a; }
+.sky.t-evening { --s1: #ff6f91; --s2: #ffb84d; --sky-ink: #fff; --orb: #ffe27a; }
+.sky.t-night   { --s1: #3a1f7a; --s2: #c04d9e; --sky-ink: #fff; --orb: #fff0b0; }
+.sky.t-night .orb { box-shadow: inset -16px -6px 0 0 #6b2f8f; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
