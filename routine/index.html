@@ -379,6 +379,9 @@ body { background-color: var(--bg) !important;
 .day.perfect, .week .w.full i { background: var(--accent) !important; color: #fff; }
 .stat b { color: var(--ink) !important; }
 /* skin picker */
+.hero { background: linear-gradient(var(--paper), var(--paper)) padding-box, var(--hero-ring, linear-gradient(var(--line), var(--line))) border-box !important; border: 2px solid transparent !important; }
+.stats .stat:nth-child(1) b { color: var(--n1, var(--ink)) !important; } .stats .stat:nth-child(2) b { color: var(--n2, var(--ink)) !important; } .stats .stat:nth-child(3) b { color: var(--n3, var(--ink)) !important; }
+.habit:not(.done) { background: color-mix(in srgb, var(--c) var(--tint, 0%), var(--paper)); }
 .sky { padding-bottom: var(--sky-pad, 22px) !important; }
 .sky .level { background: rgba(255,255,255,.94) !important; color: #2a2f3d; }
 .sky .level .title { color: #2a2f3d; }
@@ -542,6 +545,12 @@ body { background-color: var(--bg) !important;
   }
   // きせかえ: each skin is a complete look (light or dark), applied as root tokens
   const SKINS = {
+    colorful: { name: "カラフル", sw: "conic-gradient(#ff4d6d, #ff9f1a, #ffd43b, #19c37d, #2f8bff, #a24dff, #ff4d6d)", t: {
+      "--bg": "#fff8fb", "--paper": "#ffffff", "--ink": "#2a1d45", "--muted": "#76688f", "--line": "#efe2f2", "--soft": "#f8f0fb",
+      "--accent": "#ff3d7f", "--accent-ink": "#ffffff", "--study": "#2f7bff", "--exercise": "#ff4d4d", "--stretch": "#14b86e", "--beauty": "#a64dff", "--weight": "#ff9a1a", "--gold": "#ffb800",
+      "--sky-bg": "linear-gradient(120deg, #ffb3c7, #ffd29a 30%, #fff1a0 50%, #b9f2d2 70%, #b5dcff 85%, #d9c2ff)", "--sky-text": "#2a1d45", "--script": "#ff3d7f",
+      "--wash": "radial-gradient(circle at 5% 5%, rgba(255,179,199,.55), transparent 300px), radial-gradient(circle at 95% 25%, rgba(181,220,255,.6), transparent 320px), radial-gradient(circle at 5% 65%, rgba(255,241,160,.55), transparent 320px), radial-gradient(circle at 95% 90%, rgba(185,242,210,.6), transparent 320px)",
+      "--hero-ring": "linear-gradient(120deg, #ff4d6d, #ff9f1a, #ffd43b, #19c37d, #2f8bff, #a24dff)", "--tint": "9%", "--n1": "#ff3d7f", "--n2": "#ff9a1a", "--n3": "#2f7bff", "color-scheme": "light" } },
     seaglass: { name: "シーグラス", sw: "linear-gradient(135deg,#7fd0bf 50%,#e0525c 50%)", t: {
       "--bg": "#e3f1ee", "--paper": "#ffffff", "--ink": "#1f3b3a", "--muted": "#5f7d7a", "--line": "#cfe3df", "--soft": "#ebf6f3",
       "--accent": "#e0525c", "--accent-ink": "#ffffff", "--study": "#3f7fc4", "--exercise": "#e0525c", "--stretch": "#2e9e78", "--beauty": "#9b7fd4", "--weight": "#e59a3a", "--gold": "#e2a93b",
@@ -558,7 +567,7 @@ body { background-color: var(--bg) !important;
     mist: { name: "くすみミント", sw: "linear-gradient(135deg,#c9ddd5 50%,#9e5a62 50%)", t: {} },
   };
   function applySkin() {
-    const id = SKINS[state.settings.skin] ? state.settings.skin : "seaglass", root = document.documentElement.style;
+    const id = SKINS[state.settings.skin] ? state.settings.skin : "colorful", root = document.documentElement.style;
     const all = new Set(Object.values(SKINS).flatMap(k => Object.keys(k.t)));
     all.forEach(v => root.removeProperty(v));
     Object.entries(SKINS[id].t).forEach(([k, v]) => root.setProperty(k, v));
