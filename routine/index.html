@@ -534,6 +534,8 @@ body { background-color: var(--bg) !important;
       <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="簿記論"></label>
       <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="財表"></label>
       <label for="snsTypes" style="align-items:flex-start">SNS投稿の種類（1行に1つ）<textarea id="snsTypes" rows="4" style="width:180px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)"></textarea></label>
+      <div class="label" style="margin-top:6px">ZUMBAに行く曜日</div>
+      <div class="row" id="zumbaDays"></div>
       <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
       <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
       <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
@@ -768,7 +770,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -802,6 +804,8 @@ body { background-color: var(--bg) !important;
   const ticketLeft = k => !weekKeys(k).some(x => day(x).rest);
   const PLAN_DEFAULT = { sns: "寝る前にベッドで", study: "夕ごはんのあとに", exercise: "歯みがきのあとに", stretch: "お風呂あがりに", beauty: "お風呂あがりに", weight: "お風呂に入る前に" };
   const planOf = id => (state.settings.plans && state.settings.plans[id]) || PLAN_DEFAULT[id];
+  const zumbaDays = () => Array.isArray(state.settings.zumbaDays) ? state.settings.zumbaDays : [1, 3];
+  const isZumba = k => zumbaDays().includes(parseKey(k).getDay());
   const EASY = { sns: "写真を1枚だけ投稿する", study: "テキストを1ページだけ開く", exercise: "スクワット1回だけ", stretch: "大きく伸びをして深呼吸1回", beauty: "保湿だけする" };
   function stats() {
     let xp = 0, perfect = 0, weighIns = 0, studyMin = 0, recDays = 0;
@@ -832,6 +836,7 @@ body { background-color: var(--bg) !important;
   function menuFor(k, h) {
     if (!h.menu.length) return "";
     const d = day(k);
+    if (h.id === "exercise" && isZumba(k)) return d.easy ? "ZUMBAに行けたら花まる。無理なら軽く体を動かす" : "ZUMBAのレッスンに行く";
     if (d.easy && EASY[h.id]) return EASY[h.id];
     const idx = d.menu && typeof d.menu[h.id] === "number" ? d.menu[h.id] : hashStr(k + h.id) % h.menu.length;
     return h.menu[idx % h.menu.length];
@@ -971,8 +976,9 @@ body { background-color: var(--bg) !important;
     $("habits").innerHTML = HABITS.map(h => {
       const done = isDone(d, h.id);
       const st = streakFor(x => isDone(x, h.id));
-      let extra = `<div class="when">いつ：<b>${planOf(h.id)}</b></div>`;
-      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${d.easy ? "ゆるモード" : h.tag}</span>${menuFor(k, h)}</span>${d.easy ? "" : `<button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button>`}</div>`;
+      const zb = h.id === "exercise" && isZumba(k);
+      let extra = `<div class="when">いつ：<b>${zb ? "ZUMBAのレッスンで" : planOf(h.id)}</b></div>`;
+      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${zb ? "今日はZUMBA" : d.easy ? "ゆるモード" : h.tag}</span>${menuFor(k, h)}</span>${d.easy || zb ? "" : `<button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button>`}</div>`;
       if (h.id === "study") {
         const running = !!timer.id;
         const names = subjects(), sel = state.subj || 0;
@@ -985,6 +991,10 @@ body { background-color: var(--bg) !important;
           <button class="chip primary" data-timer>${running ? `止める <span class="timer" id="timerText" style="color:inherit">25:00</span>` : "25分タイマー"}</button>
           ${subjMin(d, sel) ? '<button class="chip" data-add="0">取り消し</button>' : ""}</div>
           <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${hm(d.studyMin || 0)}</b> / 目標 ${goal}分　・　積み上げ ${names.map((n, i) => `${n} ${hm(totals[i])}`).join("・")}</div>`;
+      }
+      if (h.id === "exercise") {
+        const mon = k.slice(0, 7), zn = Object.keys(state.days).filter(x => x.startsWith(mon) && isZumba(x) && isDone(state.days[x], "exercise")).length;
+        extra += `<div class="diff">今月のZUMBA <b class="num" style="color:var(--c)">${zn}回</b>（毎週 ${zumbaDays().map(i => WD[i]).join("・") || "なし"}曜）</div>`;
       }
       if (h.id === "sns") {
         const types = snsTypes(), mon = k.slice(0, 7);
@@ -1083,6 +1093,7 @@ body { background-color: var(--bg) !important;
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
     const st = $("snsTypes"); if (document.activeElement !== st) st.value = snsTypes().join("\n");
     [0, 1, 2].forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
+    $("zumbaDays").innerHTML = WD.map((w, i) => `<button class="chip ${zumbaDays().includes(i) ? "primary" : ""}" style="--c: var(--exercise)" data-zd="${i}" aria-pressed="${zumbaDays().includes(i)}">${w}</button>`).join("");
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
     if (!$("plans").childElementCount) $("plans").innerHTML = HABITS.map(h => `<label class="plan" for="plan-${h.id}">${h.name.replace(/（.*）/, "")}<input id="plan-${h.id}" data-plan="${h.id}" type="text" maxlength="30" placeholder="${PLAN_DEFAULT[h.id]}"></label>`).join("");
     HABITS.forEach(h => { const el = $("plan-" + h.id); if (document.activeElement !== el) el.value = (state.settings.plans || {})[h.id] || ""; });
@@ -1206,6 +1217,9 @@ body { background-color: var(--bg) !important;
   settingInput("target", "targetWeight", 20, 300);
   settingInput("studyGoal", "studyGoal", 5, 600);
   settingInput("weekGoal", "weekGoal", 1, 7);
+  $("zumbaDays").addEventListener("click", e => { const b = e.target.closest("[data-zd]"); if (!b) return; const i = Number(b.dataset.zd);
+    const cur = zumbaDays(), next = cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i].sort();
+    state.settings = { ...state.settings, zumbaDays: next }; queueSave("settings"); lsSave(); render(); toast("ZUMBAの曜日を保存しました"); });
   $("snsTypes").addEventListener("change", e => {
     const arr = [...new Set(e.target.value.split("\n").map(x => x.trim()).filter(Boolean))].slice(0, 10);
     state.settings = { ...state.settings, snsTypes: arr }; queueSave("settings"); lsSave(); render(); toast("投稿の種類を保存しました"); });
