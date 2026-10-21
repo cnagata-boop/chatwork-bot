@@ -430,6 +430,9 @@ body { background-color: var(--bg) !important;
 .acchead .big { font-size: 24px; font-weight: 500; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; }
 .accbar { height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden; }
 .accbar i { display: block; height: 100%; background: var(--c); border-radius: 4px; }
+.snst { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.snst .sj b { font-size: 11px; font-weight: 500; color: var(--muted); }
+.snst .sj.on b { color: var(--c); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -530,6 +533,7 @@ body { background-color: var(--bg) !important;
       <label for="subj-0">科目1<input id="subj-0" data-sname="0" type="text" maxlength="12" placeholder="国徴"></label>
       <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="簿記論"></label>
       <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="財表"></label>
+      <label for="snsTypes" style="align-items:flex-start">SNS投稿の種類（1行に1つ）<textarea id="snsTypes" rows="4" style="width:180px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)"></textarea></label>
       <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
       <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
       <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
@@ -602,6 +606,9 @@ body { background-color: var(--bg) !important;
     editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); if (add > 0) d.done.study = true; });
     if (add > 0 && !was) afterCheck(k, HABITS[0], before);
   }
+  const SNS_DEFAULT = ["Instagram 投稿", "ストーリーズ", "リール", "X"];
+  const snsTypes = () => Array.isArray(state.settings.snsTypes) ? state.settings.snsTypes : SNS_DEFAULT;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function renderSky() {
     const h = new Date().getHours();
     const t = h >= 5 && h < 10 ? "morning" : h >= 10 && h < 16 ? "day" : h >= 16 && h < 19 ? "evening" : "night";
@@ -750,7 +757,7 @@ body { background-color: var(--bg) !important;
       for (const doc of snap.docs) {
         const v = doc.data(); if (!v) continue;
         if (doc.id === "settings") settings = v;
-        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest, sticker: v.sticker || null, studyBy: v.studyBy || {} };
+        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest, sticker: v.sticker || null, studyBy: v.studyBy || {}, sns: v.sns || {} };
       }
       // keep edits that haven't been sent yet
       for (const k of Object.keys(store.pending)) if (k !== "settings" && state.days[k]) days[k] = state.days[k];
@@ -761,7 +768,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -979,6 +986,14 @@ body { background-color: var(--bg) !important;
           ${subjMin(d, sel) ? '<button class="chip" data-add="0">取り消し</button>' : ""}</div>
           <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${hm(d.studyMin || 0)}</b> / 目標 ${goal}分　・　積み上げ ${names.map((n, i) => `${n} ${hm(totals[i])}`).join("・")}</div>`;
       }
+      if (h.id === "sns") {
+        const types = snsTypes(), mon = k.slice(0, 7);
+        const cnt = t => Object.entries(state.days).filter(([dk, x]) => dk.startsWith(mon) && x.sns && x.sns[t]).length;
+        extra += types.length ? `<div class="snst">${types.map(t => { const on = !!(d.sns && d.sns[t]);
+            return `<button class="sj ${on ? "on" : ""}" data-sns="${esc(t)}" aria-pressed="${on}"><span>${on ? "✓ " : ""}${esc(t)}</span><b class="num">今月${cnt(t)}回</b></button>`; }).join("")}</div>
+          <div class="diff">${types.filter(t => d.sns && d.sns[t]).length} / ${types.length} 投稿済み・全部投稿すると完了になります</div>`
+          : `<div class="diff">設定で「投稿の種類」を入れると、種類ごとに記録できます。</div>`;
+      }
       if (h.id === "weight") {
         const prev = lastWeightBefore(k);
         let diffTxt = "";
@@ -1066,6 +1081,7 @@ body { background-color: var(--bg) !important;
     const tw = $("target"), sg = $("studyGoal");
     if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
+    const st = $("snsTypes"); if (document.activeElement !== st) st.value = snsTypes().join("\n");
     [0, 1, 2].forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
     if (!$("plans").childElementCount) $("plans").innerHTML = HABITS.map(h => `<label class="plan" for="plan-${h.id}">${h.name.replace(/（.*）/, "")}<input id="plan-${h.id}" data-plan="${h.id}" type="text" maxlength="30" placeholder="${PLAN_DEFAULT[h.id]}"></label>`).join("");
@@ -1122,6 +1138,11 @@ body { background-color: var(--bg) !important;
     } else if (b.dataset.add != null) {
       const i = state.subj || 0, add = Number(b.dataset.add);
       addStudy(k, i, add ? add : -subjMin(day(k), i));
+    } else if (b.dataset.sns != null) {
+      const t = b.dataset.sns, before = countDone(day(k)), was = isDone(day(k), "sns");
+      editDay(k, d => { d.sns = { ...(d.sns || {}) }; if (d.sns[t]) delete d.sns[t]; else d.sns[t] = true;
+        const types = snsTypes(); d.done.sns = types.length > 0 && types.every(x => d.sns[x]); });
+      if (!was && isDone(day(k), "sns")) afterCheck(k, HABITS.find(x => x.id === "sns"), before);
     } else if (b.hasAttribute("data-sadd")) {
       const v = Math.round(Number($("studyIn").value));
       if (!(v >= 1 && v <= 720)) { toast("1〜720 の分数で入れてください（例：90）"); return; }
@@ -1185,6 +1206,9 @@ body { background-color: var(--bg) !important;
   settingInput("target", "targetWeight", 20, 300);
   settingInput("studyGoal", "studyGoal", 5, 600);
   settingInput("weekGoal", "weekGoal", 1, 7);
+  $("snsTypes").addEventListener("change", e => {
+    const arr = [...new Set(e.target.value.split("\n").map(x => x.trim()).filter(Boolean))].slice(0, 10);
+    state.settings = { ...state.settings, snsTypes: arr }; queueSave("settings"); lsSave(); render(); toast("投稿の種類を保存しました"); });
   document.querySelector(".settings").addEventListener("change", e => { const i = e.target.dataset.sname; if (i == null) return;
     const arr = [0, 1, 2].map(j => (state.settings.subjects || [])[j] || ""); arr[i] = e.target.value.trim();
     state.settings = { ...state.settings, subjects: arr }; queueSave("settings"); lsSave(); render(); toast("科目名を保存しました"); });
