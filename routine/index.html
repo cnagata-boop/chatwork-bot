@@ -1,0 +1,643 @@
+<title>まいにちルーティン帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=M+PLUS+2:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow column like a sticker notebook. Today's ring and five habit cards first, then calendar, weight chart and badges. */
+:root {
+  --bg: #eef3f7;
+  --paper: #ffffff;
+  --ink: #1d2a3a;
+  --muted: #5d6b7c;
+  --line: #d9e2ea;
+  --soft: #e5ecf2;
+  --accent: #0f6f6a;
+  --accent-ink: #ffffff;
+  --study: #3a66d6;
+  --exercise: #e27a12;
+  --stretch: #23955f;
+  --beauty: #d24a8e;
+  --weight: #12839a;
+  --gold: #c99300;
+  --shadow: 0 1px 0 rgba(29, 42, 58, .06), 0 6px 18px -10px rgba(29, 42, 58, .25);
+  --f-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  --f-body: "M PLUS 2", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111821; --paper: #18222e; --ink: #e8eef4; --muted: #9aa9b8; --line: #2a3746; --soft: #213040;
+    --accent: #3fc1b7; --accent-ink: #0b1a1a;
+    --study: #7c9cf5; --exercise: #f5a04a; --stretch: #4fca8c; --beauty: #f07bb6; --weight: #4cc3d9; --gold: #f0c445;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 20px -12px rgba(0,0,0,.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111821; --paper: #18222e; --ink: #e8eef4; --muted: #9aa9b8; --line: #2a3746; --soft: #213040;
+  --accent: #3fc1b7; --accent-ink: #0b1a1a;
+  --study: #7c9cf5; --exercise: #f5a04a; --stretch: #4fca8c; --beauty: #f07bb6; --weight: #4cc3d9; --gold: #f0c445;
+  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 20px -12px rgba(0,0,0,.7);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 64px;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; }
+h2 { font-size: 18px; font-weight: 700; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.label { font-size: 12px; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { font-size: 22px; font-weight: 900; letter-spacing: .02em; }
+.brand small { display: block; font-family: var(--f-body); font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em; }
+.level { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 999px; padding: 6px 14px 6px 6px; box-shadow: var(--shadow); }
+.level .lv { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--f-display); font-weight: 900; font-size: 15px; line-height: 1; }
+.level .lv span { font-size: 9px; display: block; letter-spacing: .05em; }
+.level .meta { display: flex; flex-direction: column; min-width: 120px; }
+.level .title { font-size: 13px; font-weight: 700; }
+.xpbar { height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.xpbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .5s; }
+
+/* date nav */
+.datenav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.datenav .d { text-align: center; flex: 1; }
+.datenav .d b { font-family: var(--f-display); font-size: 20px; }
+.datenav .d .label { display: block; }
+.iconbtn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); display: grid; place-items: center; font-size: 18px; }
+.iconbtn:disabled { opacity: .35; cursor: default; }
+.todaylink { border: 0; background: none; color: var(--accent); font-weight: 700; font-size: 13px; text-decoration: underline; padding: 0; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; background: var(--paper); border-radius: 22px; padding: 20px; box-shadow: var(--shadow); }
+.ring { width: 132px; height: 132px; position: relative; }
+.ring svg { width: 100%; height: 100%; display: block; }
+.ring .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ring .center b { font-family: var(--f-display); font-size: 34px; font-weight: 900; line-height: 1; }
+.ring .center span { display: block; font-size: 11px; color: var(--muted); }
+.hero .msg { font-family: var(--f-display); font-size: 17px; font-weight: 700; line-height: 1.5; }
+.stats { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; }
+.stat b { font-family: var(--f-num); font-size: 22px; font-weight: 600; display: block; line-height: 1.2; }
+.stat .label { font-size: 11px; }
+@media (max-width: 440px) { .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; } .stats { justify-content: center; } }
+
+/* habit cards */
+.habits { display: flex; flex-direction: column; gap: 12px; }
+.habit { --c: var(--accent); background: var(--paper); border-radius: 18px; box-shadow: var(--shadow); padding: 14px 16px; display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start; border: 2px solid transparent; transition: border-color .2s; }
+.habit.done { border-color: var(--c); }
+.check { width: 56px; height: 56px; border-radius: 16px; border: 2.5px dashed var(--c); background: transparent; display: grid; place-items: center; font-size: 26px; color: var(--c); transition: transform .15s, background .2s; position: relative; }
+.check svg { width: 28px; height: 28px; }
+.habit.done .check { background: var(--c); border-style: solid; color: var(--paper); }
+.check:active { transform: scale(.92); }
+.habit.pop .check { animation: pop .45s ease; }
+@keyframes pop { 0% { transform: scale(.8) rotate(-8deg); } 60% { transform: scale(1.15) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
+.hbody { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.hhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.hname { font-family: var(--f-display); font-size: 17px; font-weight: 700; }
+.streak { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.streak b { color: var(--c); font-family: var(--f-num); font-size: 14px; }
+.menu { display: flex; align-items: center; gap: 8px; font-size: 14px; background: var(--soft); border-radius: 10px; padding: 6px 6px 6px 10px; }
+.menu span { flex: 1; min-width: 0; }
+.menu .tag { font-size: 11px; color: var(--c); font-weight: 700; margin-right: 4px; }
+.shuffle { border: 0; background: var(--paper); border-radius: 8px; font-size: 12px; padding: 4px 8px; color: var(--muted); white-space: nowrap; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
+.chip.primary { background: var(--c); border-color: var(--c); color: var(--paper); }
+.mins { font-family: var(--f-num); font-size: 18px; font-weight: 600; color: var(--c); margin-right: 4px; }
+.weightin { display: flex; align-items: center; gap: 6px; }
+.weightin input { width: 96px; font-family: var(--f-num); font-size: 20px; font-weight: 600; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); }
+.diff { font-size: 13px; color: var(--muted); }
+.timer { font-family: var(--f-num); font-size: 15px; font-weight: 600; color: var(--c); }
+
+.memo textarea { width: 100%; min-height: 64px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font: inherit; background: var(--paper); color: var(--ink); resize: vertical; }
+
+/* panels */
+.panel { background: var(--paper); border-radius: 20px; padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px; }
+.phead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* calendar */
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal .wd { text-align: center; font-size: 11px; color: var(--muted); }
+.cal .wd.sun { color: var(--beauty); } .cal .wd.sat { color: var(--study); }
+.day { aspect-ratio: 1; max-width: 100%; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-family: var(--f-num); padding: 0; position: relative; }
+.day.empty { border: 0; background: none; }
+.day.future { opacity: .4; cursor: default; }
+.day.sel { outline: 2.5px solid var(--ink); outline-offset: 1px; }
+.day.today { font-weight: 700; }
+.dots { display: flex; gap: 2px; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
+.day.perfect { background: var(--gold); border-color: var(--gold); color: #fff; }
+.day.perfect .dots i { background: rgba(255,255,255,.85) !important; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* chart */
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { width: 100%; height: auto; display: block; min-width: 300px; }
+.chart text { fill: var(--muted); font-family: var(--f-num); font-size: 10px; }
+.empty-note { font-size: 13px; color: var(--muted); background: var(--soft); border-radius: 12px; padding: 12px; }
+
+/* badges */
+.badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.badge { border-radius: 14px; border: 1px dashed var(--line); padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.badge .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); color: var(--muted); font-family: var(--f-display); font-weight: 900; font-size: 15px; }
+.badge b { font-size: 13px; font-family: var(--f-display); }
+.badge small { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.badge.got { border-style: solid; border-color: var(--gold); }
+.badge.got .ic { background: var(--gold); color: #fff; }
+
+/* settings */
+.settings { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.settings label { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.settings input { width: 110px; font-family: var(--f-num); padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font-size: 15px; }
+.savestate { font-size: 12px; color: var(--muted); }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 14px; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; max-width: calc(100% - 32px); text-align: center; z-index: 20; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">まいにちルーティン帳<small>勉強・運動・ストレッチ・美容・体重を、ひとつで。</small></h1>
+    <div class="level" aria-label="レベル">
+      <div class="lv"><div><span>Lv</span><b id="lvNum">1</b></div></div>
+      <div class="meta">
+        <div class="title" id="lvTitle">ルーティン見習い</div>
+        <div class="xpbar"><i id="xpFill" style="width:0%"></i></div>
+        <div class="label num" id="xpText">0 / 100 XP</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="datenav" aria-label="日付の切り替え">
+    <button class="iconbtn" id="prevDay" aria-label="前の日">‹</button>
+    <div class="d"><span class="label" id="dayLabel">今日</span><b id="dateText"></b><br><button class="todaylink" id="goToday" hidden>今日に戻る</button></div>
+    <button class="iconbtn" id="nextDay" aria-label="次の日">›</button>
+  </nav>
+
+  <section class="hero" aria-label="今日の達成状況">
+    <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center"><div><b id="ringNum">0</b><span>/ 5 達成</span></div></div></div>
+    <div>
+      <div class="msg" id="heroMsg">さあ、今日のひとつ目から。</div>
+      <div class="stats">
+        <div class="stat"><b id="stStreak">0</b><span class="label">連続日数</span></div>
+        <div class="stat"><b id="stPerfect">0</b><span class="label">全部できた日</span></div>
+        <div class="stat"><b id="stStudy">0h</b><span class="label">勉強の合計</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="habits" id="habits" aria-label="ルーティン"></section>
+
+  <section class="memo">
+    <label class="label" for="memo">ひとことメモ（気分・体調・できたこと）</label>
+    <textarea id="memo" placeholder="例：朝のストレッチで肩が軽くなった"></textarea>
+  </section>
+
+  <section class="panel" aria-label="カレンダー">
+    <div class="phead">
+      <button class="iconbtn" id="prevMonth" aria-label="前の月">‹</button>
+      <h2 id="monthTitle"></h2>
+      <button class="iconbtn" id="nextMonth" aria-label="次の月">›</button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="panel" aria-label="体重の推移">
+    <div class="phead"><h2>体重の推移（30日）</h2><span class="label num" id="wSummary"></span></div>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section class="panel" aria-label="バッジ">
+    <div class="phead"><h2>バッジ</h2><span class="label num" id="badgeCount"></span></div>
+    <div class="badges" id="badges"></div>
+  </section>
+
+  <section class="panel" aria-label="設定">
+    <h2>設定</h2>
+    <div class="settings">
+      <label for="target">目標体重（kg）<input id="target" type="number" step="0.1" inputmode="decimal" placeholder="例 55.0"></label>
+      <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
+      <div class="savestate" id="saveState">保存先を確認しています…</div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const HABITS = [
+    { id: "study", name: "勉強", color: "--study", tag: "今日のおすすめ",
+      menu: ["25分集中（ポモドーロ1回）", "本を10ページ読む", "単語・用語を20個覚える", "昨日の復習を10分", "ニュース記事を1本じっくり読む", "テキストを1章すすめる", "学んだことを3行でメモ"] },
+    { id: "exercise", name: "小さな運動", color: "--exercise", tag: "今日のメニュー",
+      menu: ["スクワット 10回", "壁腕立て伏せ 10回", "プランク 30秒", "その場足踏み 3分", "かかと上げ 20回", "ランジ 左右10回", "ひと駅ぶん / 10分歩く", "階段を使う"] },
+    { id: "stretch", name: "ストレッチ", color: "--stretch", tag: "今日のメニュー",
+      menu: ["首まわし 左右5回", "肩甲骨まわし 1分", "前屈 30秒×2", "太もも前のばし 左右30秒", "背伸びして深呼吸 5回", "猫のポーズ 1分", "股関節ゆらし 1分", "寝る前の開脚 1分"] },
+    { id: "beauty", name: "美容", color: "--beauty", tag: "今日のケア",
+      menu: ["化粧水と乳液でしっかり保湿", "フェイスマッサージ 3分", "水をコップ1杯多く飲む", "日焼け止めを塗る", "爪とハンドケア", "頭皮マッサージ 2分", "ヘアオイルで髪をケア", "湯船に10分つかる"] },
+    { id: "weight", name: "体重測定", color: "--weight", tag: "",
+      menu: [] },
+  ];
+  const TITLES = ["ルーティン見習い", "コツコツさん", "習慣の芽", "続ける人", "ととのい上手", "毎日の達人", "ルーティンマスター", "生活の名人", "伝説のルーティナー"];
+  const BADGES = [
+    { id: "first", ic: "1", name: "はじめの一歩", desc: "初めてチェックした", test: s => s.recDays >= 1 },
+    { id: "s3", ic: "3", name: "三日坊主こえ", desc: "3日続けた", test: s => s.bestStreak >= 3 },
+    { id: "s7", ic: "7", name: "1週間つづいた", desc: "7日続けた", test: s => s.bestStreak >= 7 },
+    { id: "s30", ic: "30", name: "ひと月の習慣", desc: "30日続けた", test: s => s.bestStreak >= 30 },
+    { id: "p1", ic: "★", name: "パーフェクト", desc: "5つ全部できた日", test: s => s.perfect >= 1 },
+    { id: "p10", ic: "★10", name: "パーフェクト10", desc: "全部できた日が10回", test: s => s.perfect >= 10 },
+    { id: "w10", ic: "kg", name: "はかる習慣", desc: "体重を10回記録", test: s => s.weighIns >= 10 },
+    { id: "h10", ic: "10h", name: "勉強10時間", desc: "勉強の合計10時間", test: s => s.studyMin >= 600 },
+    { id: "h50", ic: "50h", name: "勉強50時間", desc: "勉強の合計50時間", test: s => s.studyMin >= 3000 },
+  ];
+  const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, "0");
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parseKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return keyOf(d); };
+  const todayKey = () => keyOf(new Date());
+  const WD = ["日", "月", "火", "水", "木", "金", "土"];
+  const hashStr = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+
+  const state = {
+    days: {},          // "YYYY-MM-DD" -> {done:{}, weight, studyMin, memo, menu:{}}
+    settings: {},      // {targetWeight, studyGoal}
+    selected: todayKey(),
+    month: (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(),
+  };
+
+  // ---------- storage ----------
+  // db (per-person private subtree) when available, otherwise this browser only.
+  const store = { mode: "pending", col: null, pending: {}, chains: {} };
+  const LS_KEY = "routine-notebook-v1";
+  function lsLoad() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; } }
+  function lsSave() { try { localStorage.setItem(LS_KEY, JSON.stringify({ days: state.days, settings: state.settings })); } catch {} }
+
+  function queueSave(docId) {
+    clearTimeout(store.pending[docId]);
+    store.pending[docId] = setTimeout(() => flush(docId), 500);
+    setSaveState("保存中…");
+  }
+  function flush(docId) {
+    delete store.pending[docId];
+    if (store.mode === "pending") { store.pending[docId] = setTimeout(() => flush(docId), 800); return; }
+    if (store.mode === "local") { lsSave(); setSaveState("このブラウザに保存しました"); return; }
+    const body = docId === "settings" ? { kind: "settings", ...state.settings } : { kind: "day", date: docId, ...state.days[docId] };
+    const prev = store.chains[docId] || Promise.resolve();
+    store.chains[docId] = prev.then(() => store.col.doc(docId).set(JSON.parse(JSON.stringify(body))))
+      .then(() => setSaveState("保存しました（どの端末からでも同じ記録が見られます）"))
+      .catch(e => {
+        if (e && e.code === "unavailable") { setTimeout(() => queueSave(docId), 1500 + Math.random() * 1000); return; }
+        setSaveState("保存できませんでした：" + (e && e.message ? e.message : "通信状態を確認してください"));
+      });
+  }
+  function setSaveState(t) { $("saveState").textContent = t; }
+
+  async function initStore() {
+    const cached = lsLoad();
+    if (cached) { state.days = cached.days || {}; state.settings = cached.settings || {}; render(); }
+    let db = null, uid = null;
+    try {
+      if (window.claude && window.claude.use) {
+        const [d, u] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+        db = d; uid = u ? await u.id() : null;
+      }
+    } catch { db = null; }
+    if (!db || !uid) {
+      store.mode = "local";
+      setSaveState("このブラウザだけに保存しています（サインインすると端末をまたいで記録できます）");
+      return;
+    }
+    store.col = db.collection("data/users/" + uid);
+    store.mode = "db";
+    setSaveState("同期しています…");
+    let first = true;
+    store.col.onSnapshot(snap => {
+      const days = {}; let settings = null;
+      for (const doc of snap.docs) {
+        const v = doc.data(); if (!v) continue;
+        if (doc.id === "settings") settings = v;
+        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {} };
+      }
+      // keep edits that haven't been sent yet
+      for (const k of Object.keys(store.pending)) if (k !== "settings" && state.days[k]) days[k] = state.days[k];
+      if (first && snap.empty && cached) {
+        // first time on db: carry over what this browser had
+        state.days = { ...cached.days, ...state.days };
+        Object.keys(state.days).forEach(queueSave);
+        if (cached.settings) queueSave("settings");
+      } else {
+        state.days = days;
+        if (settings && !store.pending.settings) state.settings = { targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null };
+      }
+      if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
+      first = false;
+      lsSave();
+      render();
+    }, e => setSaveState("同期が止まりました。ページを開き直してください（" + e.code + "）"));
+  }
+
+  // ---------- day helpers ----------
+  function day(k) { return state.days[k] || { done: {}, weight: null, studyMin: 0, memo: "", menu: {} }; }
+  function editDay(k, fn) {
+    const d = JSON.parse(JSON.stringify(day(k)));
+    fn(d); state.days[k] = d; queueSave(k); lsSave(); render();
+  }
+  const isDone = (d, h) => h === "weight" ? typeof d.weight === "number" : !!(d.done && d.done[h]);
+  const countDone = d => HABITS.filter(h => isDone(d, h.id)).length;
+
+  function streakFor(pred) {
+    let k = todayKey();
+    if (!pred(day(k))) k = addDays(k, -1);
+    let n = 0;
+    while (pred(day(k)) && n < 3650) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function stats() {
+    let xp = 0, perfect = 0, weighIns = 0, studyMin = 0, recDays = 0;
+    const keys = Object.keys(state.days).sort();
+    for (const k of keys) {
+      const d = state.days[k], c = countDone(d);
+      xp += c * 10 + (c === 5 ? 20 : 0);
+      if (c === 5) perfect++;
+      if (c > 0) recDays++;
+      if (typeof d.weight === "number") weighIns++;
+      studyMin += d.studyMin || 0;
+    }
+    // best run of days with at least one check
+    let best = 0, run = 0, prev = null;
+    for (const k of keys) {
+      if (countDone(state.days[k]) === 0) continue;
+      run = prev && addDays(prev, 1) === k ? run + 1 : 1;
+      best = Math.max(best, run); prev = k;
+    }
+    return { xp, perfect, weighIns, studyMin, recDays, bestStreak: best, streak: streakFor(d => countDone(d) > 0) };
+  }
+  function levelOf(xp) {
+    let lv = 1; while (50 * lv * (lv + 1) <= xp) lv++;
+    const base = 50 * (lv - 1) * lv, next = 50 * lv * (lv + 1);
+    return { lv, base, next };
+  }
+  function menuFor(k, h) {
+    if (!h.menu.length) return "";
+    const d = day(k);
+    const idx = d.menu && typeof d.menu[h.id] === "number" ? d.menu[h.id] : hashStr(k + h.id) % h.menu.length;
+    return h.menu[idx % h.menu.length];
+  }
+  function lastWeightBefore(k) {
+    const keys = Object.keys(state.days).filter(x => x < k && typeof state.days[x].weight === "number").sort();
+    return keys.length ? state.days[keys[keys.length - 1]].weight : null;
+  }
+
+  // ---------- timer (study) ----------
+  const timer = { end: 0, id: null };
+  function startTimer() {
+    if (timer.id) { clearInterval(timer.id); timer.id = null; renderHabits(); return; }
+    timer.end = Date.now() + 25 * 60 * 1000;
+    timer.forKey = state.selected;
+    timer.id = setInterval(() => {
+      const left = timer.end - Date.now();
+      const el = $("timerText");
+      if (left <= 0) {
+        clearInterval(timer.id); timer.id = null;
+        editDay(timer.forKey, d => { d.studyMin = (d.studyMin || 0) + 25; d.done.study = true; });
+        toast("25分集中できました。おつかれさま！"); celebrate(40);
+        return;
+      }
+      if (el) el.textContent = `${pad(Math.floor(left / 60000))}:${pad(Math.floor(left / 1000) % 60)}`;
+    }, 500);
+    renderHabits();
+  }
+
+  // ---------- render ----------
+  function render() {
+    renderHeader(); renderHero(); renderHabits(); renderMemo(); renderCal(); renderChart(); renderBadges(); renderSettings();
+  }
+  function renderHeader() {
+    const s = stats(), L = levelOf(s.xp);
+    $("lvNum").textContent = L.lv;
+    $("lvTitle").textContent = TITLES[Math.min(L.lv - 1, TITLES.length - 1)];
+    $("xpFill").style.width = Math.round((s.xp - L.base) / (L.next - L.base) * 100) + "%";
+    $("xpText").textContent = `${s.xp} / ${L.next} XP`;
+    const k = state.selected, d = parseKey(k), t = todayKey();
+    $("dateText").textContent = `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+    const diff = Math.round((parseKey(t) - d) / 86400000);
+    $("dayLabel").textContent = diff === 0 ? "今日" : diff === 1 ? "きのう" : `${diff}日前`;
+    $("goToday").hidden = diff === 0;
+    $("nextDay").disabled = k >= t;
+  }
+  function renderHero() {
+    const d = day(state.selected), c = countDone(d), s = stats();
+    const svg = $("ringSvg"); const R = 50, C = 2 * Math.PI * R, seg = C / 5, gap = 6;
+    svg.innerHTML = HABITS.map((h, i) => {
+      const on = isDone(d, h.id);
+      return `<circle cx="60" cy="60" r="${R}" fill="none" stroke="var(${on ? h.color : "--soft"})" stroke-width="12" stroke-linecap="round"
+        stroke-dasharray="${seg - gap} ${C - seg + gap}" stroke-dashoffset="${-i * seg}" transform="rotate(-90 60 60)"/>`;
+    }).join("");
+    $("ringNum").textContent = c;
+    const isToday = state.selected === todayKey();
+    const msgs = isToday
+      ? ["さあ、今日のひとつ目から。", "いいスタート！その調子。", "もう2つ。ペースいいです。", "半分こえました！", "あとひとつで全部！", "今日はパーフェクト！自分をほめよう。"]
+      : ["この日の記録をつけられます。", "この日は1つ達成。", "この日は2つ達成。", "この日は3つ達成。", "この日は4つ達成。", "この日はパーフェクト！"];
+    $("heroMsg").textContent = msgs[c];
+    $("stStreak").textContent = s.streak + "日";
+    $("stPerfect").textContent = s.perfect + "日";
+    $("stStudy").textContent = (s.studyMin / 60).toFixed(1) + "h";
+  }
+  function renderHabits() {
+    const k = state.selected, d = day(k);
+    const goal = state.settings.studyGoal || 30;
+    $("habits").innerHTML = HABITS.map(h => {
+      const done = isDone(d, h.id);
+      const st = streakFor(x => isDone(x, h.id));
+      let extra = "";
+      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${h.tag}</span>${menuFor(k, h)}</span><button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button></div>`;
+      if (h.id === "study") {
+        const running = !!timer.id;
+        extra += `<div class="row"><span class="mins num">${d.studyMin || 0}<small>分</small></span><span class="diff">/ 目標 ${goal}分</span>
+          <button class="chip" data-add="15">+15分</button><button class="chip" data-add="30">+30分</button>
+          <button class="chip primary" data-timer>${running ? '止める <span class="timer" id="timerText" style="color:inherit">25:00</span>' : "25分タイマー"}</button>
+          ${d.studyMin ? '<button class="chip" data-add="0">リセット</button>' : ""}</div>`;
+      }
+      if (h.id === "weight") {
+        const prev = lastWeightBefore(k);
+        let diffTxt = "";
+        if (typeof d.weight === "number" && prev != null) { const df = d.weight - prev; diffTxt = `前回から ${df > 0 ? "+" : ""}${df.toFixed(1)}kg`; }
+        else if (prev != null) diffTxt = `前回 ${prev.toFixed(1)}kg`;
+        const tw = state.settings.targetWeight;
+        if (typeof d.weight === "number" && tw) { const r = d.weight - tw; diffTxt += `${diffTxt ? "・" : ""}${r <= 0 ? "目標達成！" : `目標まで ${r.toFixed(1)}kg`}`; }
+        extra += `<div class="row weightin"><input id="weightIn" type="number" step="0.1" inputmode="decimal" placeholder="00.0" value="${typeof d.weight === "number" ? d.weight.toFixed(1) : ""}" aria-label="体重（kg）"><span>kg</span>
+          <button class="chip primary" data-wsave>記録</button>${typeof d.weight === "number" ? '<button class="chip" data-wclear>消す</button>' : ""}</div>
+          <div class="diff">${diffTxt || "朝、トイレのあとに同じ条件ではかるのがおすすめ。"}</div>`;
+      }
+      return `<article class="habit ${done ? "done" : ""}" style="--c: var(${h.color})" data-h="${h.id}">
+        <button class="check" data-toggle="${h.id}" aria-pressed="${done}" aria-label="${h.name}を${done ? "未完了にする" : "完了にする"}">${done ? CHECK_SVG : ""}</button>
+        <div class="hbody"><div class="hhead"><span class="hname">${h.name}</span><span class="streak">連続 <b>${st}</b> 日</span></div>${extra}</div>
+      </article>`;
+    }).join("");
+  }
+  function renderMemo() {
+    const m = $("memo"), v = day(state.selected).memo || "";
+    if (document.activeElement !== m && m.value !== v) m.value = v;
+  }
+  function renderCal() {
+    const m = state.month, y = m.getFullYear(), mo = m.getMonth();
+    $("monthTitle").textContent = `${y}年${mo + 1}月`;
+    const first = new Date(y, mo, 1).getDay(), n = new Date(y, mo + 1, 0).getDate(), t = todayKey();
+    let html = WD.map((w, i) => `<div class="wd ${i === 0 ? "sun" : i === 6 ? "sat" : ""}">${w}</div>`).join("");
+    for (let i = 0; i < first; i++) html += `<div class="day empty"></div>`;
+    for (let dd = 1; dd <= n; dd++) {
+      const k = `${y}-${pad(mo + 1)}-${pad(dd)}`, d = day(k), c = countDone(d);
+      const dots = HABITS.map(h => `<i style="${isDone(d, h.id) ? `background:var(${h.color})` : ""}"></i>`).join("");
+      const cls = ["day", k > t ? "future" : "", k === t ? "today" : "", k === state.selected ? "sel" : "", c === 5 ? "perfect" : ""].join(" ");
+      html += `<button class="${cls}" data-day="${k}" ${k > t ? "disabled" : ""} aria-label="${mo + 1}月${dd}日 ${c}つ達成">${dd}<span class="dots">${dots}</span></button>`;
+    }
+    $("cal").innerHTML = html;
+    const now = new Date();
+    $("nextMonth").disabled = y > now.getFullYear() || (y === now.getFullYear() && mo >= now.getMonth());
+    $("legend").innerHTML = HABITS.map(h => `<span><i style="background:var(${h.color})"></i>${h.name}</span>`).join("") + `<span><i style="background:var(--gold)"></i>全部できた日</span>`;
+  }
+  function renderChart() {
+    const t = todayKey(), pts = [];
+    for (let i = 29; i >= 0; i--) { const k = addDays(t, -i), w = day(k).weight; if (typeof w === "number") pts.push({ i: 29 - i, k, w }); }
+    const tw = state.settings.targetWeight;
+    if (pts.length < 2) {
+      $("chart").innerHTML = `<div class="empty-note">体重を2日以上記録すると、ここに30日間のグラフが出ます。${pts.length ? "あと1回です。" : "まずは今日の体重を入れてみましょう。"}</div>`;
+      $("wSummary").textContent = pts.length ? `最新 ${pts[0].w.toFixed(1)}kg` : "";
+      return;
+    }
+    const W = 600, H = 220, L = 44, Rr = 16, T = 16, B = 30;
+    const vals = pts.map(p => p.w).concat(tw ? [tw] : []);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    const padv = Math.max(0.5, (hi - lo) * 0.15); lo = Math.floor((lo - padv) * 2) / 2; hi = Math.ceil((hi + padv) * 2) / 2;
+    const x = i => L + i / 29 * (W - L - Rr), y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    const ticks = [lo, (lo + hi) / 2, hi];
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="30日間の体重グラフ">`;
+    s += ticks.map(v => `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${v.toFixed(1)}</text>`).join("");
+    [0, 14, 29].forEach(i => { const d = parseKey(addDays(t, i - 29)); s += `<text x="${x(i)}" y="${H - 10}" text-anchor="${i === 0 ? "start" : i === 29 ? "end" : "middle"}">${d.getMonth() + 1}/${d.getDate()}</text>`; });
+    if (tw && tw >= lo && tw <= hi) s += `<line x1="${L}" x2="${W - Rr}" y1="${y(tw)}" y2="${y(tw)}" stroke="var(--stretch)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - Rr}" y="${y(tw) - 5}" text-anchor="end" style="fill:var(--stretch)">目標 ${tw.toFixed(1)}</text>`;
+    const line = pts.map((p, j) => `${j ? "L" : "M"}${x(p.i).toFixed(1)},${y(p.w).toFixed(1)}`).join("");
+    const area = line + `L${x(pts[pts.length - 1].i).toFixed(1)},${H - B}L${x(pts[0].i).toFixed(1)},${H - B}Z`;
+    s += `<path d="${area}" fill="var(--weight)" fill-opacity=".12"/>`;
+    s += `<path d="${line}" fill="none" stroke="var(--weight)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s += pts.map((p, j) => `<circle cx="${x(p.i)}" cy="${y(p.w)}" r="${j === pts.length - 1 ? 5 : 2.5}" fill="var(--weight)" stroke="var(--paper)" stroke-width="${j === pts.length - 1 ? 2 : 0}"/>`).join("");
+    s += `</svg>`;
+    $("chart").innerHTML = s;
+    const df = pts[pts.length - 1].w - pts[0].w;
+    $("wSummary").textContent = `最新 ${pts[pts.length - 1].w.toFixed(1)}kg（30日で ${df > 0 ? "+" : ""}${df.toFixed(1)}）`;
+  }
+  function renderBadges() {
+    const s = stats(); let got = 0;
+    $("badges").innerHTML = BADGES.map(b => { const ok = b.test(s); if (ok) got++;
+      return `<div class="badge ${ok ? "got" : ""}"><div class="ic">${b.ic}</div><b>${b.name}</b><small>${b.desc}</small></div>`; }).join("");
+    $("badgeCount").textContent = `${got} / ${BADGES.length}`;
+  }
+  function renderSettings() {
+    const tw = $("target"), sg = $("studyGoal");
+    if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
+    if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
+  }
+
+  // ---------- fun ----------
+  let toastT;
+  function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2200); }
+  function celebrate(n = 120) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cv = $("confetti"), ctx = cv.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; ctx.scale(dpr, dpr);
+    const cs = getComputedStyle(document.documentElement);
+    const cols = HABITS.map(h => cs.getPropertyValue(h.color).trim()).concat([cs.getPropertyValue("--gold").trim()]);
+    const ps = Array.from({ length: n }, () => ({ x: innerWidth / 2 + (Math.random() - .5) * 120, y: innerHeight * .35, vx: (Math.random() - .5) * 12, vy: -Math.random() * 12 - 4, r: Math.random() * 6 + 4, a: Math.random() * 6, c: cols[Math.floor(Math.random() * cols.length)] }));
+    let f = 0;
+    (function step() {
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.a += .2; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); ctx.restore(); });
+      if (++f < 110) requestAnimationFrame(step); else ctx.clearRect(0, 0, innerWidth, innerHeight);
+    })();
+  }
+  const CHEERS = ["ナイス！", "えらい！", "その調子！", "できた！", "いいね！"];
+  function afterCheck(k, h, before) {
+    const after = countDone(day(k));
+    if (after === 5 && before < 5) { toast("パーフェクト達成！+20XPボーナス"); celebrate(); }
+    else toast(`${h.name} ${CHEERS[Math.floor(Math.random() * CHEERS.length)]} +10XP`);
+    const card = document.querySelector(`[data-h="${h.id}"]`); if (card) card.classList.add("pop");
+  }
+
+  // ---------- events ----------
+  $("habits").addEventListener("click", e => {
+    const k = state.selected, b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.toggle) {
+      const h = HABITS.find(x => x.id === b.dataset.toggle), before = countDone(day(k)), wasDone = isDone(day(k), h.id);
+      if (h.id === "weight") {
+        if (wasDone) editDay(k, d => { d.weight = null; });
+        else { const inp = $("weightIn"); if (inp) { inp.focus(); toast("体重を入れて「記録」を押してください"); } }
+        return;
+      }
+      editDay(k, d => { d.done[h.id] = !wasDone; });
+      if (!wasDone) afterCheck(k, h, before);
+    } else if (b.dataset.shuffle) {
+      const h = HABITS.find(x => x.id === b.dataset.shuffle), cur = h.menu.indexOf(menuFor(k, h));
+      editDay(k, d => { d.menu = d.menu || {}; d.menu[h.id] = (cur + 1 + Math.floor(Math.random() * (h.menu.length - 1))) % h.menu.length; });
+    } else if (b.dataset.add != null) {
+      const add = Number(b.dataset.add), before = countDone(day(k)), was = isDone(day(k), "study");
+      editDay(k, d => { d.studyMin = add ? (d.studyMin || 0) + add : 0; if (add) d.done.study = true; });
+      if (add && !was) afterCheck(k, HABITS[0], before);
+    } else if (b.hasAttribute("data-timer")) {
+      startTimer();
+    } else if (b.hasAttribute("data-wsave")) {
+      saveWeight();
+    } else if (b.hasAttribute("data-wclear")) {
+      editDay(k, d => { d.weight = null; });
+    }
+  });
+  $("habits").addEventListener("keydown", e => { if (e.target.id === "weightIn" && e.key === "Enter") { e.preventDefault(); saveWeight(); } });
+  function saveWeight() {
+    const k = state.selected, v = parseFloat($("weightIn").value);
+    if (!(v > 20 && v < 300)) { toast("体重は 20〜300 kg の数字で入れてください"); return; }
+    const before = countDone(day(k)), was = isDone(day(k), "weight");
+    editDay(k, d => { d.weight = Math.round(v * 10) / 10; });
+    if (!was) afterCheck(k, HABITS[4], before); else toast("体重を更新しました");
+  }
+  let memoT;
+  $("memo").addEventListener("input", e => { const k = state.selected, v = e.target.value; clearTimeout(memoT); memoT = setTimeout(() => { const d = JSON.parse(JSON.stringify(day(k))); d.memo = v; state.days[k] = d; queueSave(k); lsSave(); }, 700); });
+  function selectDay(k) { state.selected = k; const d = parseKey(k); state.month = new Date(d.getFullYear(), d.getMonth(), 1); render(); }
+  $("prevDay").onclick = () => selectDay(addDays(state.selected, -1));
+  $("nextDay").onclick = () => { if (state.selected < todayKey()) selectDay(addDays(state.selected, 1)); };
+  $("goToday").onclick = () => selectDay(todayKey());
+  $("cal").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b && !b.disabled) { selectDay(b.dataset.day); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+  $("prevMonth").onclick = () => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1); renderCal(); };
+  $("nextMonth").onclick = () => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() + 1, 1); renderCal(); };
+  function settingInput(id, field, min, max) {
+    $(id).addEventListener("change", e => {
+      const v = e.target.value === "" ? null : Number(e.target.value);
+      if (v != null && !(v >= min && v <= max)) { toast(`${min}〜${max} の数字で入れてください`); renderSettings(); return; }
+      state.settings = { ...state.settings, [field]: v }; queueSave("settings"); lsSave(); render(); toast("設定を保存しました");
+    });
+  }
+  settingInput("target", "targetWeight", 20, 300);
+  settingInput("studyGoal", "studyGoal", 5, 600);
+  // date rollover while the page stays open
+  let lastToday = todayKey();
+  setInterval(() => { const t = todayKey(); if (t !== lastToday) { if (state.selected === lastToday) state.selected = t; lastToday = t; render(); } }, 60000);
+
+  render();
+  initStore();
+})();
+</script>
