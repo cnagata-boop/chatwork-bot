@@ -18,7 +18,7 @@
   --exercise: #b85c50;
   --stretch: #5f8f73;
   --beauty: #8a7bb0;
-  --weight: #b88a52;
+  --weight: #b88a52; --sns: #4fb3c8;
   --gold: #b89a5a;
   --blob1: transparent; --blob2: transparent; --blob3: transparent; --blob4: transparent;
   --shadow: 0 1px 2px rgba(29, 42, 77, .06);
@@ -30,7 +30,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0b1730; --paper: #12234a; --ink: #eaf5ff; --muted: #93a8cb; --line: #25406c; --soft: #183059;
     --accent: #b48cf0; --accent-ink: #120a24;
-    --study: #82a8ff; --exercise: #ff7b6f; --stretch: #3fd8c6; --beauty: #c79af6; --weight: #5cc7f2; --gold: #f2cd6c;
+    --study: #82a8ff; --exercise: #ff7b6f; --stretch: #3fd8c6; --beauty: #c79af6; --weight: #5cc7f2; --sns: #4fb3c8; --gold: #f2cd6c;
     --blob1: transparent; --blob2: transparent; --blob3: transparent; --blob4: transparent;
     --shadow: 0 1px 2px rgba(0,0,0,.35);
     color-scheme: dark;
@@ -39,7 +39,7 @@
 :root[data-theme="dark"] {
     --bg: #0b1730; --paper: #12234a; --ink: #eaf5ff; --muted: #93a8cb; --line: #25406c; --soft: #183059;
     --accent: #b48cf0; --accent-ink: #120a24;
-    --study: #82a8ff; --exercise: #ff7b6f; --stretch: #3fd8c6; --beauty: #c79af6; --weight: #5cc7f2; --gold: #f2cd6c;
+    --study: #82a8ff; --exercise: #ff7b6f; --stretch: #3fd8c6; --beauty: #c79af6; --weight: #5cc7f2; --sns: #4fb3c8; --gold: #f2cd6c;
     --blob1: transparent; --blob2: transparent; --blob3: transparent; --blob4: transparent;
     --shadow: 0 1px 2px rgba(0,0,0,.35);
   color-scheme: dark;
@@ -226,7 +226,7 @@ input, textarea { font-size: 16px !important; }
 .habit { position: relative; overflow: hidden; }
 .habit.done { background: color-mix(in srgb, var(--c) 10%, var(--paper)); }
 .check .ico { width: 30px; height: 30px; }
-.stamp { position: absolute; left: 14px; bottom: 12px; font-family: var(--f-display); font-weight: 900; font-size: 13px; color: var(--c); border: 2px solid var(--c); border-radius: 8px; padding: 0 8px; transform: rotate(-10deg); opacity: .85; pointer-events: none; }
+.stamp { position: absolute; right: 14px; top: 40px; font-family: var(--f-display); font-weight: 900; font-size: 13px; color: var(--c); border: 2px solid var(--c); border-radius: 8px; padding: 0 8px; transform: rotate(-10deg); opacity: .85; pointer-events: none; }
 .habit.pop .stamp { animation: stamp .4s ease; }
 @keyframes stamp { 0% { transform: rotate(-10deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-10deg) scale(1); opacity: .85; } }
 .plus { position: fixed; z-index: 16; pointer-events: none; font-family: var(--f-display); font-weight: 900; font-size: 18px; color: var(--c); animation: floatup .9s ease-out forwards; }
@@ -416,6 +416,11 @@ body { background-color: var(--bg) !important;
 .book .it.no .pic { filter: grayscale(1); opacity: .22; }
 .book .it b { color: var(--ink); font-size: 12px; font-weight: 600; }
 .book .it.rare b { color: var(--gold); }
+.subj { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sj { border: 1px solid var(--line); background: var(--paper); border-radius: 12px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 12px; min-width: 0; }
+.sj span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sj b { font-size: 16px; color: var(--c); }
+.sj.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--paper)); font-weight: 700; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -450,7 +455,7 @@ body { background-color: var(--bg) !important;
   <div id="nudge" hidden></div>
   <div class="swipehint">左右にスワイプで日付を切り替え</div>
   <section class="hero" aria-label="今日の達成状況">
-    <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center"><div id="ringCount"><b id="ringNum">0</b><span class="of">/5</span><span class="cap">TODAY</span></div><div id="ringSticker" hidden></div></div></div>
+    <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center"><div id="ringCount"><b id="ringNum">0</b><span class="of" id="ringOf">/5</span><span class="cap">TODAY</span></div><div id="ringSticker" hidden></div></div></div>
     <div>
       <div class="msg" id="heroMsg">さあ、今日のひとつ目から。</div>
       <div class="stats">
@@ -493,7 +498,7 @@ body { background-color: var(--bg) !important;
 
   <section class="panel" aria-label="シール帳">
     <div class="phead"><h2>シール帳</h2><span class="label num" id="stickerCount"></span></div>
-    <p class="empty-note" style="margin:0">5つ全部できた日に、海とおとぎ話のシールが1枚もらえます。もらったシールはカレンダーのその日に貼られます。金色の真珠貝はめったに出ないレアシールです。</p>
+    <p class="empty-note" style="margin:0">ルーティンを全部できた日に、海とおとぎ話のシールが1枚もらえます。もらったシールはカレンダーのその日に貼られます。金色の真珠貝はめったに出ないレアシールです。</p>
     <div class="book" id="book"></div>
   </section>
 
@@ -506,6 +511,10 @@ body { background-color: var(--bg) !important;
     <h2>設定</h2>
     <div class="settings">
       <label for="target">目標体重（kg）<input id="target" type="number" step="0.1" inputmode="decimal" placeholder="例 55.0"></label>
+      <div class="label" style="margin-top:6px">勉強の3科目の名前</div>
+      <label for="subj-0">科目1<input id="subj-0" data-sname="0" type="text" maxlength="12" placeholder="例：英語"></label>
+      <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="例：簿記"></label>
+      <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="例：資格"></label>
       <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
       <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
       <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
@@ -528,6 +537,8 @@ body { background-color: var(--bg) !important;
       menu: ["首まわし 左右5回", "肩甲骨まわし 1分", "前屈 30秒×2", "太もも前のばし 左右30秒", "背伸びして深呼吸 5回", "猫のポーズ 1分", "股関節ゆらし 1分", "寝る前の開脚 1分"] },
     { id: "beauty", name: "美容", color: "--beauty", tag: "今日のケア",
       menu: ["化粧水と乳液でしっかり保湿", "フェイスマッサージ 3分", "水をコップ1杯多く飲む", "日焼け止めを塗る", "爪とハンドケア", "頭皮マッサージ 2分", "ヘアオイルで髪をケア", "湯船に10分つかる"] },
+    { id: "sns", name: "SNS投稿", color: "--sns", tag: "今日のネタ", since: "2026-10-21",
+      menu: ["今日の小さな発見を写真1枚で", "勉強したことを3行でシェア", "ルーティン達成を報告", "お気に入りのコスメを紹介", "今日の空や景色を投稿", "最近うれしかったことを書く", "ストーリーズに1枚あげる", "おすすめの本やアプリを紹介"] },
     { id: "weight", name: "体重測定（夜・お風呂の前）", color: "--weight", tag: "",
       menu: [] },
   ];
@@ -537,7 +548,7 @@ body { background-color: var(--bg) !important;
     { id: "s3", ic: "3", name: "三日坊主こえ", desc: "3日続けた", test: s => s.bestStreak >= 3 },
     { id: "s7", ic: "7", name: "1週間つづいた", desc: "7日続けた", test: s => s.bestStreak >= 7 },
     { id: "s30", ic: "30", name: "ひと月の習慣", desc: "30日続けた", test: s => s.bestStreak >= 30 },
-    { id: "p1", ic: "★", name: "パーフェクト", desc: "5つ全部できた日", test: s => s.perfect >= 1 },
+    { id: "p1", ic: "★", name: "パーフェクト", desc: "全部できた日", test: s => s.perfect >= 1 },
     { id: "p10", ic: "★10", name: "パーフェクト10", desc: "全部できた日が10回", test: s => s.perfect >= 10 },
     { id: "w10", ic: "kg", name: "はかる習慣", desc: "体重を10回記録", test: s => s.weighIns >= 10 },
     { id: "h10", ic: "10h", name: "勉強10時間", desc: "勉強の合計10時間", test: s => s.studyMin >= 600 },
@@ -548,6 +559,7 @@ body { background-color: var(--bg) !important;
     exercise: '<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
     stretch: '<circle cx="12" cy="4.5" r="2"/><path d="M12 8v6M12 9.5 5 6M12 9.5 19 6M12 14l-4 6.5M12 14l4 6.5"/>',
     beauty: '<path d="M11 3.5l1.8 4.7 4.7 1.8-4.7 1.8L11 16.5l-1.8-4.7L4.5 10l4.7-1.8z"/><path d="M18.5 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+    sns: '<path d="M21 3 3 10.5l7 2.6 2.6 7.4z"/><path d="M21 3 10 13.1"/>',
     weight: '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.5 10a4.6 4.6 0 0 1 7 0"/><path d="M12 10.2l1.6-1.8"/>',
   };
   const icon = id => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[id]}</svg>`;
@@ -566,6 +578,13 @@ body { background-color: var(--bg) !important;
       <defs><radialGradient id="pearl" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#f3ece6"/><stop offset="1" stop-color="#d9cfe0"/></radialGradient></defs></svg>`;
   }
   const QUOTES = ["小さな一歩も、毎日なら大きな道になる。", "完璧じゃなくていい。ゼロにしないのが大事。", "今日の自分は、きのうの自分より少しだけ前へ。", "続けた日数は、ちゃんと自分の味方になる。", "疲れた日は1つだけでも花まる。", "ストレッチ1分でも、体はちゃんと喜んでる。", "がんばった自分を、今日もほめてあげよう。", "習慣は、ゆっくり育つ植物みたいなもの。"];
+  const subjects = () => [0, 1, 2].map(i => (state.settings.subjects || [])[i] || `科目${i + 1}`);
+  const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
+  function addStudy(k, i, add) {
+    const before = countDone(day(k)), was = isDone(day(k), "study");
+    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); if (add > 0) d.done.study = true; });
+    if (add > 0 && !was) afterCheck(k, HABITS[0], before);
+  }
   function renderSky() {
     const h = new Date().getHours();
     const t = h >= 5 && h < 10 ? "morning" : h >= 10 && h < 16 ? "day" : h >= 16 && h < 19 ? "evening" : "night";
@@ -578,29 +597,29 @@ body { background-color: var(--bg) !important;
   const SKINS = {
     magic: { name: "マジカル", sw: "linear-gradient(135deg,#3a3590 45%,#f3a6c8 45%, #f3a6c8 70%, #f3c95b 70%)", t: {
       "--bg": "#fbf6ff", "--paper": "#ffffff", "--ink": "#2d2552", "--muted": "#7c7299", "--line": "#ece3f6", "--soft": "#f6f0fc",
-      "--accent": "#c94a9a", "--accent-ink": "#ffffff", "--study": "#5b7cff", "--exercise": "#ff6b8a", "--stretch": "#33b98f", "--beauty": "#a978ff", "--weight": "#f2a03d", "--gold": "#e0a93a",
+      "--accent": "#c94a9a", "--accent-ink": "#ffffff", "--study": "#5b7cff", "--exercise": "#ff6b8a", "--stretch": "#33b98f", "--beauty": "#a978ff", "--weight": "#f2a03d", "--sns": "#3bb8d6", "--gold": "#e0a93a",
       "--sky-bg": "linear-gradient(180deg, #1f2468 0%, #463c9e 45%, #9a63c4 75%, #f0a0c4 100%)", "--sky-text": "#ffffff", "--script": "#f6d77a",
       "--scene": "block", "--moon": "none", "--sea": "none", "--castle": "block", "--garden": "none", "--sky-pad": "104px",
       "--wash": "radial-gradient(circle at 5% 5%, rgba(255,214,234,.7), transparent 320px), radial-gradient(circle at 95% 30%, rgba(214,226,255,.7), transparent 340px), radial-gradient(circle at 5% 70%, rgba(236,220,255,.7), transparent 340px), radial-gradient(circle at 95% 92%, rgba(255,236,200,.6), transparent 320px)",
       "--hero-ring": "linear-gradient(120deg, #f3c95b, #f3a6c8, #a978ff, #5b7cff)", "--tint": "6%", "--n1": "#c94a9a", "--n2": "#e0a93a", "--n3": "#5b7cff", "color-scheme": "light" } },
     colorful: { name: "カラフル", sw: "conic-gradient(#ff4d6d, #ff9f1a, #ffd43b, #19c37d, #2f8bff, #a24dff, #ff4d6d)", t: {
       "--bg": "#fff8fb", "--paper": "#ffffff", "--ink": "#2a1d45", "--muted": "#76688f", "--line": "#efe2f2", "--soft": "#f8f0fb",
-      "--accent": "#ff3d7f", "--accent-ink": "#ffffff", "--study": "#2f7bff", "--exercise": "#ff4d4d", "--stretch": "#14b86e", "--beauty": "#a64dff", "--weight": "#ff9a1a", "--gold": "#ffb800",
+      "--accent": "#ff3d7f", "--accent-ink": "#ffffff", "--study": "#2f7bff", "--exercise": "#ff4d4d", "--stretch": "#14b86e", "--beauty": "#a64dff", "--weight": "#ff9a1a", "--sns": "#00b5d6", "--gold": "#ffb800",
       "--sky-bg": "linear-gradient(120deg, #ffb3c7, #ffd29a 30%, #fff1a0 50%, #b9f2d2 70%, #b5dcff 85%, #d9c2ff)", "--sky-text": "#2a1d45", "--script": "#ff3d7f",
       "--wash": "radial-gradient(circle at 5% 5%, rgba(255,179,199,.55), transparent 300px), radial-gradient(circle at 95% 25%, rgba(181,220,255,.6), transparent 320px), radial-gradient(circle at 5% 65%, rgba(255,241,160,.55), transparent 320px), radial-gradient(circle at 95% 90%, rgba(185,242,210,.6), transparent 320px)",
       "--hero-ring": "linear-gradient(120deg, #ff4d6d, #ff9f1a, #ffd43b, #19c37d, #2f8bff, #a24dff)", "--tint": "9%", "--n1": "#ff3d7f", "--n2": "#ff9a1a", "--n3": "#2f7bff", "color-scheme": "light" } },
     seaglass: { name: "シーグラス", sw: "linear-gradient(135deg,#7fd0bf 50%,#e0525c 50%)", t: {
       "--bg": "#e3f1ee", "--paper": "#ffffff", "--ink": "#1f3b3a", "--muted": "#5f7d7a", "--line": "#cfe3df", "--soft": "#ebf6f3",
-      "--accent": "#e0525c", "--accent-ink": "#ffffff", "--study": "#3f7fc4", "--exercise": "#e0525c", "--stretch": "#2e9e78", "--beauty": "#9b7fd4", "--weight": "#e59a3a", "--gold": "#e2a93b",
+      "--accent": "#e0525c", "--accent-ink": "#ffffff", "--study": "#3f7fc4", "--exercise": "#e0525c", "--stretch": "#2e9e78", "--beauty": "#9b7fd4", "--weight": "#e59a3a", "--sns": "#2bb3c9", "--gold": "#e2a93b",
       "--sky-bg": "linear-gradient(160deg, #d9f3ec, #b4e2d6 60%, #f7dce2)", "--sky-text": "#1f3b3a", "--script": "#3f9a86", "color-scheme": "light" } },
     moon: { name: "ムーンナイト", sw: "linear-gradient(135deg,#1a2a78 50%,#e8c26a 50%)", t: {
       "--bg": "#0f1b3d", "--paper": "#17264f", "--ink": "#f3efe6", "--muted": "#a7b0cf", "--line": "#2a3b6e", "--soft": "#1e2f5e",
-      "--accent": "#e8c26a", "--accent-ink": "#1a1a2e", "--study": "#7fa6f0", "--exercise": "#f07a72", "--stretch": "#4fcfae", "--beauty": "#c3a0f0", "--weight": "#6cc6e8", "--gold": "#e8c26a",
+      "--accent": "#e8c26a", "--accent-ink": "#1a1a2e", "--study": "#7fa6f0", "--exercise": "#f07a72", "--stretch": "#4fcfae", "--beauty": "#c3a0f0", "--weight": "#6cc6e8", "--sns": "#ffb3d9", "--gold": "#e8c26a",
       "--sky-bg": "linear-gradient(180deg, #0c1856, #2a3a9a 55%, #5a46a8)", "--sky-text": "#ffffff", "--script": "#e8c26a",
       "--scene": "block", "--garden": "none", "--sky-pad": "56px", "--pattern": "linear-gradient(transparent, transparent)", "--wash": "linear-gradient(180deg, #0f1b3d, #16245a 60%, #241a4f), linear-gradient(transparent, transparent), linear-gradient(transparent, transparent), linear-gradient(transparent, transparent)", "color-scheme": "dark" } },
     pearl: { name: "パール", sw: "linear-gradient(135deg,#f3e6e8 50%,#b76e79 50%)", t: {
       "--bg": "#f6f0ee", "--paper": "#fffdfb", "--ink": "#3a2f35", "--muted": "#8a7b80", "--line": "#eadfda", "--soft": "#f4ece8",
-      "--accent": "#b76e79", "--accent-ink": "#ffffff", "--study": "#7d8fb3", "--exercise": "#c7787a", "--stretch": "#7fa898", "--beauty": "#a993c4", "--weight": "#c9a27a", "--gold": "#c9a27a",
+      "--accent": "#b76e79", "--accent-ink": "#ffffff", "--study": "#7d8fb3", "--exercise": "#c7787a", "--stretch": "#7fa898", "--beauty": "#a993c4", "--weight": "#c9a27a", "--sns": "#8fb5c4", "--gold": "#c9a27a",
       "--sky-bg": "linear-gradient(160deg, #fbf3ef, #f0e1e8 55%, #e3efeb)", "--sky-text": "#3a2f35", "--script": "#b76e79", "color-scheme": "light" } },
     mist: { name: "くすみミント", sw: "linear-gradient(135deg,#c9ddd5 50%,#9e5a62 50%)", t: {} },
   };
@@ -641,7 +660,7 @@ body { background-color: var(--bg) !important;
   }
   // days completed before stickers existed get a fixed one from their date
   function stickerOf(k) {
-    const d = day(k); if (countDone(d) < 5) return null;
+    const d = day(k); if (!isPerfect(k)) return null;
     if (d.sticker) return d.sticker;
     const pool = STICKERS.filter(x => !x.rare); return pool[hashStr(k + "stk") % pool.length].id;
   }
@@ -714,7 +733,7 @@ body { background-color: var(--bg) !important;
       for (const doc of snap.docs) {
         const v = doc.data(); if (!v) continue;
         if (doc.id === "settings") settings = v;
-        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest, sticker: v.sticker || null };
+        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest, sticker: v.sticker || null, studyBy: v.studyBy || {} };
       }
       // keep edits that haven't been sent yet
       for (const k of Object.keys(store.pending)) if (k !== "settings" && state.days[k]) days[k] = state.days[k];
@@ -725,7 +744,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -742,6 +761,8 @@ body { background-color: var(--bg) !important;
   }
   const isDone = (d, h) => h === "weight" ? typeof d.weight === "number" : !!(d.done && d.done[h]);
   const countDone = d => HABITS.filter(h => isDone(d, h.id)).length;
+  const habitsFor = k => HABITS.filter(h => !h.since || k >= h.since);
+  const isPerfect = k => habitsFor(k).every(h => isDone(day(k), h.id));
 
   // a rest day (お休みチケット) keeps every streak alive
   function streakFor(pred) {
@@ -755,16 +776,17 @@ body { background-color: var(--bg) !important;
   const weekStart = k => { const d = parseKey(k); return addDays(k, -((d.getDay() + 6) % 7)); };
   const weekKeys = k => { const s0 = weekStart(k); return Array.from({ length: 7 }, (_, i) => addDays(s0, i)); };
   const ticketLeft = k => !weekKeys(k).some(x => day(x).rest);
-  const PLAN_DEFAULT = { study: "夕ごはんのあとに", exercise: "歯みがきのあとに", stretch: "お風呂あがりに", beauty: "お風呂あがりに", weight: "お風呂に入る前に" };
+  const PLAN_DEFAULT = { sns: "寝る前にベッドで", study: "夕ごはんのあとに", exercise: "歯みがきのあとに", stretch: "お風呂あがりに", beauty: "お風呂あがりに", weight: "お風呂に入る前に" };
   const planOf = id => (state.settings.plans && state.settings.plans[id]) || PLAN_DEFAULT[id];
-  const EASY = { study: "テキストを1ページだけ開く", exercise: "スクワット1回だけ", stretch: "大きく伸びをして深呼吸1回", beauty: "保湿だけする" };
+  const EASY = { sns: "写真を1枚だけ投稿する", study: "テキストを1ページだけ開く", exercise: "スクワット1回だけ", stretch: "大きく伸びをして深呼吸1回", beauty: "保湿だけする" };
   function stats() {
     let xp = 0, perfect = 0, weighIns = 0, studyMin = 0, recDays = 0;
     const keys = Object.keys(state.days).sort();
     for (const k of keys) {
       const d = state.days[k], c = countDone(d);
-      xp += c * 10 + (c === 5 ? 20 : 0);
-      if (c === 5) perfect++;
+      const pf = isPerfect(k);
+      xp += c * 10 + (pf ? 20 : 0);
+      if (pf) perfect++;
       if (c > 0) recDays++;
       if (typeof d.weight === "number") weighIns++;
       studyMin += d.studyMin || 0;
@@ -800,13 +822,13 @@ body { background-color: var(--bg) !important;
   function startTimer() {
     if (timer.id) { clearInterval(timer.id); timer.id = null; renderHabits(); return; }
     timer.end = Date.now() + 25 * 60 * 1000;
-    timer.forKey = state.selected;
+    timer.forKey = state.selected; timer.subj = state.subj || 0;
     timer.id = setInterval(() => {
       const left = timer.end - Date.now();
       const el = $("timerText");
       if (left <= 0) {
         clearInterval(timer.id); timer.id = null;
-        editDay(timer.forKey, d => { d.studyMin = (d.studyMin || 0) + 25; d.done.study = true; });
+        addStudy(timer.forKey, timer.subj, 25);
         toast("25分集中できました。おつかれさま！"); celebrate(40);
         return;
       }
@@ -836,13 +858,14 @@ body { background-color: var(--bg) !important;
   }
   function renderHero() {
     const d = day(state.selected), c = countDone(d), s = stats();
-    const svg = $("ringSvg"); const R = 54, C = 2 * Math.PI * R, seg = C / 5, gap = 10;
+    const svg = $("ringSvg"); const R = 54, C = 2 * Math.PI * R, seg = C / HABITS.length, gap = 10;
     svg.innerHTML = HABITS.map((h, i) => {
       const on = isDone(d, h.id);
       return `<circle cx="60" cy="60" r="${R}" fill="none" stroke="var(${on ? h.color : "--line"})" stroke-width="${on ? 5 : 3}" stroke-linecap="round"
         stroke-dasharray="${seg - gap} ${C - seg + gap}" stroke-dashoffset="${-i * seg}" transform="rotate(-90 60 60)"/>`;
     }).join("");
     $("ringNum").textContent = c;
+    const N = habitsFor(state.selected).length; $("ringOf").textContent = "/" + N;
     const rs = $("ringSticker"), sid = stickerOf(state.selected);
     $("ringCount").hidden = !!sid; rs.hidden = !sid;
     if (sid && rs.dataset.k !== state.selected + sid) {
@@ -852,9 +875,10 @@ body { background-color: var(--bg) !important;
     if (!sid) rs.dataset.k = "";
     const isToday = state.selected === todayKey();
     const msgs = isToday
-      ? ["さあ、今日のひとつ目から。", "いいスタート！その調子。", "もう2つ。ペースいいです。", "半分こえました！", "あとひとつで全部！", "今日はパーフェクト！自分をほめよう。"]
-      : ["この日の記録をつけられます。", "この日は1つ達成。", "この日は2つ達成。", "この日は3つ達成。", "この日は4つ達成。", "この日はパーフェクト！"];
-    $("heroMsg").textContent = msgs[c];
+      ? ["さあ、今日のひとつ目から。", "いいスタート！その調子。", "いいペースです。", "半分こえました！", "あとひとつで全部！", "今日はパーフェクト！自分をほめよう。"]
+      : ["この日の記録をつけられます。", `この日は${c}つ達成。`, `この日は${c}つ達成。`, `この日は${c}つ達成。`, `この日は${c}つ達成。`, "この日はパーフェクト！"];
+    const rem = N - c;
+    $("heroMsg").textContent = rem <= 0 ? msgs[5] : c === 0 ? msgs[0] : rem === 1 ? msgs[4] : c * 2 >= N ? msgs[3] : c === 1 ? msgs[1] : msgs[2];
     $("stStreak").textContent = s.streak + "日";
     $("stPerfect").textContent = s.perfect + "日";
     $("stStudy").textContent = (s.studyMin / 60).toFixed(1) + "h";
@@ -882,15 +906,15 @@ body { background-color: var(--bg) !important;
     const t = todayKey(), ks = weekKeys(t), goal = state.settings.weekGoal || 5;
     let n = 0;
     $("week").innerHTML = ks.map(k => { const d = day(k), c = countDone(d); if (c > 0) n++;
-      const cls = ["w", c === 5 ? "full" : c > 0 ? "has" : d.rest ? "rest" : "", k === t ? "today" : ""].join(" ");
-      return `<div class="${cls}">${WD[parseKey(k).getDay()]}<i>${k > t ? "" : c === 5 ? stickerSvg(stickerOf(k)) : d.rest ? "休" : c}</i></div>`; }).join("");
+      const cls = ["w", isPerfect(k) && k <= t ? "full" : c > 0 ? "has" : d.rest ? "rest" : "", k === t ? "today" : ""].join(" ");
+      return `<div class="${cls}">${WD[parseKey(k).getDay()]}<i>${k > t ? "" : isPerfect(k) ? stickerSvg(stickerOf(k)) : d.rest ? "休" : c}</i></div>`; }).join("");
     $("wgoalText").textContent = `${goal}日チェックする`;
     $("wgoalNum").textContent = `${n} / ${goal}日`;
     $("wgoalFill").style.width = Math.min(100, Math.round(n / goal * 100)) + "%";
     $("ticketInfo").textContent = ticketLeft(t) ? "お休みチケット 残り1枚" : "お休みチケット 使用済み";
   }
   const SHORT = { study: "勉", exercise: "動", stretch: "伸", beauty: "美", weight: "kg" };
-  const SHORTNAME = { study: "勉強", exercise: "運動", stretch: "ストレッチ", beauty: "美容", weight: "体重" };
+  const SHORTNAME = { study: "勉強", exercise: "運動", stretch: "ストレッチ", beauty: "美容", sns: "SNS", weight: "体重" };
   function renderQuick(d) {
     $("quick").innerHTML = HABITS.map(h => { const on = isDone(d, h.id);
       return `<button class="qbtn ${on ? "on" : ""}" style="--c: var(${h.color})" data-toggle="${h.id}" aria-pressed="${on}" aria-label="${h.name}を${on ? "未完了にする" : "完了にする"}"><span class="dot">${on ? CHECK_SVG : icon(h.id)}</span>${SHORTNAME[h.id]}</button>`; }).join("");
@@ -905,10 +929,14 @@ body { background-color: var(--bg) !important;
       if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${d.easy ? "ゆるモード" : h.tag}</span>${menuFor(k, h)}</span>${d.easy ? "" : `<button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button>`}</div>`;
       if (h.id === "study") {
         const running = !!timer.id;
-        extra += `<div class="row"><span class="mins num">${d.studyMin || 0}<small>分</small></span><span class="diff">/ 目標 ${goal}分</span>
+        const names = subjects(), sel = state.subj || 0;
+        const totals = [0, 1, 2].map(i => Object.values(state.days).reduce((a, x) => a + subjMin(x, i), 0));
+        extra += `<div class="subj" role="group" aria-label="科目をえらぶ">${names.map((n, i) => `<button class="sj ${i === sel ? "on" : ""}" data-subj="${i}" aria-pressed="${i === sel}"><span>${n}</span><b class="num">${subjMin(d, i)}分</b></button>`).join("")}</div>
+          <div class="row"><span class="diff">「${names[sel]}」に</span>
           <button class="chip" data-add="15">+15分</button><button class="chip" data-add="30">+30分</button>
-          <button class="chip primary" data-timer>${running ? '止める <span class="timer" id="timerText" style="color:inherit">25:00</span>' : "25分タイマー"}</button>
-          ${d.studyMin ? '<button class="chip" data-add="0">リセット</button>' : ""}</div>`;
+          <button class="chip primary" data-timer>${running ? `止める <span class="timer" id="timerText" style="color:inherit">25:00</span>` : "25分タイマー"}</button>
+          ${subjMin(d, sel) ? '<button class="chip" data-add="0">取り消し</button>' : ""}</div>
+          <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${d.studyMin || 0}分</b> / 目標 ${goal}分　・　累計 ${names.map((n, i) => `${n} ${(totals[i] / 60).toFixed(1)}h`).join("・")}</div>`;
       }
       if (h.id === "weight") {
         const prev = lastWeightBefore(k);
@@ -940,7 +968,7 @@ body { background-color: var(--bg) !important;
     for (let dd = 1; dd <= n; dd++) {
       const k = `${y}-${pad(mo + 1)}-${pad(dd)}`, d = day(k), c = countDone(d);
       const dots = HABITS.map(h => `<i style="${isDone(d, h.id) ? `background:var(${h.color})` : ""}"></i>`).join("");
-      const cls = ["day", k > t ? "future" : "", k === t ? "today" : "", k === state.selected ? "sel" : "", c === 5 ? "perfect" : "", d.rest ? "rest" : ""].join(" ");
+      const cls = ["day", k > t ? "future" : "", k === t ? "today" : "", k === state.selected ? "sel" : "", isPerfect(k) && k <= t ? "perfect" : "", d.rest ? "rest" : ""].join(" ");
       const sid = stickerOf(k);
       html += `<button class="${cls}" data-day="${k}" ${k > t ? "disabled" : ""} aria-label="${mo + 1}月${dd}日 ${c}つ達成${sid ? "・シール" : ""}">${dd}${sid ? `<span class="stkw">${stickerSvg(sid)}</span>` : `<span class="dots">${dots}</span>`}</button>`;
     }
@@ -997,6 +1025,7 @@ body { background-color: var(--bg) !important;
     const tw = $("target"), sg = $("studyGoal");
     if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
+    [0, 1, 2].forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
     if (!$("plans").childElementCount) $("plans").innerHTML = HABITS.map(h => `<label class="plan" for="plan-${h.id}">${h.name.replace(/（.*）/, "")}<input id="plan-${h.id}" data-plan="${h.id}" type="text" maxlength="30" placeholder="${PLAN_DEFAULT[h.id]}"></label>`).join("");
     HABITS.forEach(h => { const el = $("plan-" + h.id); if (document.activeElement !== el) el.value = (state.settings.plans || {})[h.id] || ""; });
@@ -1023,11 +1052,11 @@ body { background-color: var(--bg) !important;
   function rs_reset() { $("ringSticker").dataset.k = ""; }
   function afterCheck(k, h, before) {
     const after = countDone(day(k));
-    if (after === 5 && before < 5) {
+    if (isPerfect(k) && before < habitsFor(k).length) {
       if (!day(k).sticker) { state.justEarned = true; const sid = pickSticker(k); editDay(k, d => { d.sticker = sid; }); }
       else { state.justEarned = true; rs_reset(); render(); }
       const st = STICKERS.find(x => x.id === stickerOf(k));
-      toast(st.rare ? `レアシール「${st.name}」が出ました！ +20XP` : `5つ達成！シール「${st.name}」をゲット +20XP`); celebrate();
+      toast(st.rare ? `レアシール「${st.name}」が出ました！ +20XP` : `全部達成！シール「${st.name}」をゲット +20XP`); celebrate();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
     else toast(`${h.name} ${CHEERS[Math.floor(Math.random() * CHEERS.length)]} +10XP`);
@@ -1050,9 +1079,10 @@ body { background-color: var(--bg) !important;
       const h = HABITS.find(x => x.id === b.dataset.shuffle), cur = h.menu.indexOf(menuFor(k, h));
       editDay(k, d => { d.menu = d.menu || {}; d.menu[h.id] = (cur + 1 + Math.floor(Math.random() * (h.menu.length - 1))) % h.menu.length; });
     } else if (b.dataset.add != null) {
-      const add = Number(b.dataset.add), before = countDone(day(k)), was = isDone(day(k), "study");
-      editDay(k, d => { d.studyMin = add ? (d.studyMin || 0) + add : 0; if (add) d.done.study = true; });
-      if (add && !was) afterCheck(k, HABITS[0], before);
+      const i = state.subj || 0, add = Number(b.dataset.add);
+      addStudy(k, i, add ? add : -subjMin(day(k), i));
+    } else if (b.dataset.subj != null) {
+      state.subj = Number(b.dataset.subj); renderHabits();
     } else if (b.hasAttribute("data-timer")) {
       startTimer();
     } else if (b.hasAttribute("data-wsave")) {
@@ -1088,7 +1118,7 @@ body { background-color: var(--bg) !important;
     if (!(v > 20 && v < 300)) { toast("体重は 20〜300 kg の数字で入れてください"); return; }
     const before = countDone(day(k)), was = isDone(day(k), "weight");
     editDay(k, d => { d.weight = Math.round(v * 10) / 10; });
-    if (!was) afterCheck(k, HABITS[4], before); else toast("体重を更新しました");
+    if (!was) afterCheck(k, HABITS.find(x => x.id === "weight"), before); else toast("体重を更新しました");
   }
   let memoT;
   $("memo").addEventListener("input", e => { const k = state.selected, v = e.target.value; clearTimeout(memoT); memoT = setTimeout(() => { const d = JSON.parse(JSON.stringify(day(k))); d.memo = v; state.days[k] = d; queueSave(k); lsSave(); }, 700); });
@@ -1109,6 +1139,9 @@ body { background-color: var(--bg) !important;
   settingInput("target", "targetWeight", 20, 300);
   settingInput("studyGoal", "studyGoal", 5, 600);
   settingInput("weekGoal", "weekGoal", 1, 7);
+  document.querySelector(".settings").addEventListener("change", e => { const i = e.target.dataset.sname; if (i == null) return;
+    const arr = [0, 1, 2].map(j => (state.settings.subjects || [])[j] || ""); arr[i] = e.target.value.trim();
+    state.settings = { ...state.settings, subjects: arr }; queueSave("settings"); lsSave(); render(); toast("科目名を保存しました"); });
   $("skins").addEventListener("click", e => { const b = e.target.closest("[data-skin]"); if (!b) return;
     state.settings = { ...state.settings, skin: b.dataset.skin }; queueSave("settings"); lsSave(); render(); toast(`きせかえ：${SKINS[b.dataset.skin].name}`); });
   $("plans").addEventListener("change", e => { const id = e.target.dataset.plan; if (!id) return;
