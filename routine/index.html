@@ -804,7 +804,7 @@ body { background-color: var(--bg) !important;
   const ticketLeft = k => !weekKeys(k).some(x => day(x).rest);
   const PLAN_DEFAULT = { sns: "寝る前にベッドで", study: "夕ごはんのあとに", exercise: "歯みがきのあとに", stretch: "お風呂あがりに", beauty: "お風呂あがりに", weight: "お風呂に入る前に" };
   const planOf = id => (state.settings.plans && state.settings.plans[id]) || PLAN_DEFAULT[id];
-  const zumbaDays = () => Array.isArray(state.settings.zumbaDays) ? state.settings.zumbaDays : [1, 3];
+  const zumbaDays = () => Array.isArray(state.settings.zumbaDays) ? state.settings.zumbaDays : [1, 4];
   const isZumba = k => zumbaDays().includes(parseKey(k).getDay());
   const EASY = { sns: "写真を1枚だけ投稿する", study: "テキストを1ページだけ開く", exercise: "スクワット1回だけ", stretch: "大きく伸びをして深呼吸1回", beauty: "保湿だけする" };
   function stats() {
