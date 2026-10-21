@@ -219,6 +219,32 @@ input, textarea { font-size: 16px !important; }
 @keyframes stamp { 0% { transform: rotate(-10deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-10deg) scale(1); opacity: .85; } }
 .plus { position: fixed; z-index: 16; pointer-events: none; font-family: var(--f-display); font-weight: 900; font-size: 18px; color: var(--c); animation: floatup .9s ease-out forwards; }
 @keyframes floatup { to { transform: translateY(-60px); opacity: 0; } }
+/* keep-going helpers */
+.nudge { background: var(--paper); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; border: 2px dashed var(--gold); }
+.nudge b { font-family: var(--f-display); font-size: 16px; }
+.nudge p { margin: 0; font-size: 13px; color: var(--muted); }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 700; }
+.btn.main { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.on { background: var(--gold); border-color: var(--gold); color: #fff; }
+.next { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.next b { color: var(--ink); }
+.hero .btnrow { margin-top: 10px; }
+@media (max-width: 440px) { .hero .btnrow { justify-content: center; } }
+.when { font-size: 12px; color: var(--muted); }
+.when b { color: var(--c); font-weight: 700; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.week .w { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.week .w i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-family: var(--f-num); font-size: 12px; font-weight: 600; background: var(--soft); color: var(--muted); }
+.week .w.has i { background: color-mix(in srgb, var(--accent) 22%, var(--paper)); color: var(--ink); }
+.week .w.full i { background: var(--gold); color: #fff; }
+.week .w.rest i { background: var(--paper); border: 2px dashed var(--muted); }
+.week .w.today { color: var(--ink); font-weight: 700; }
+.wgoal { font-size: 13px; }
+.wgoal .xpbar { height: 8px; }
+.wgoal .xpbar i { background: var(--gold); }
+.day.rest { border-style: dashed; border-color: var(--muted); }
+.settings .plan input { width: 180px; font-family: var(--f-body); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -246,6 +272,7 @@ input, textarea { font-size: 16px !important; }
     <button class="iconbtn" id="nextDay" aria-label="次の日">›</button>
   </nav>
 
+  <div id="nudge" hidden></div>
   <div class="swipehint">左右にスワイプで日付を切り替え</div>
   <section class="hero" aria-label="今日の達成状況">
     <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center" id="mascot"></div></div>
@@ -257,10 +284,18 @@ input, textarea { font-size: 16px !important; }
         <div class="stat"><b id="stPerfect">0</b><span class="label">全部できた日</span></div>
         <div class="stat"><b id="stStudy">0h</b><span class="label">勉強の合計</span></div>
       </div>
+      <div class="next" id="nextGoal"></div>
+      <div class="btnrow" id="dayBtns"></div>
     </div>
   </section>
 
   <section class="habits" id="habits" aria-label="ルーティン"></section>
+
+  <section class="panel" aria-label="今週">
+    <div class="phead"><h2>今週のがんばり</h2><span class="label" id="ticketInfo"></span></div>
+    <div class="week" id="week"></div>
+    <div class="wgoal"><div class="row" style="justify-content:space-between"><span>今週の目標：<b id="wgoalText"></b></span><span class="num" id="wgoalNum"></span></div><div class="xpbar"><i id="wgoalFill" style="width:0%"></i></div></div>
+  </section>
 
   <section class="memo">
     <label class="label" for="memo">ひとことメモ（気分・体調・できたこと）</label>
@@ -292,6 +327,9 @@ input, textarea { font-size: 16px !important; }
     <div class="settings">
       <label for="target">目標体重（kg）<input id="target" type="number" step="0.1" inputmode="decimal" placeholder="例 55.0"></label>
       <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
+      <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
+      <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
+      <div id="plans" style="display:flex;flex-direction:column;gap:10px"></div>
       <div class="savestate" id="saveState">保存先を確認しています…</div>
     </div>
   </section>
@@ -427,7 +465,7 @@ input, textarea { font-size: 16px !important; }
       for (const doc of snap.docs) {
         const v = doc.data(); if (!v) continue;
         if (doc.id === "settings") settings = v;
-        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {} };
+        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest };
       }
       // keep edits that haven't been sent yet
       for (const k of Object.keys(store.pending)) if (k !== "settings" && state.days[k]) days[k] = state.days[k];
@@ -438,7 +476,7 @@ input, textarea { font-size: 16px !important; }
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null };
+        if (settings && !store.pending.settings) state.settings = { targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -456,13 +494,21 @@ input, textarea { font-size: 16px !important; }
   const isDone = (d, h) => h === "weight" ? typeof d.weight === "number" : !!(d.done && d.done[h]);
   const countDone = d => HABITS.filter(h => isDone(d, h.id)).length;
 
+  // a rest day (お休みチケット) keeps every streak alive
   function streakFor(pred) {
+    const ok = d => d.rest || pred(d);
     let k = todayKey();
-    if (!pred(day(k))) k = addDays(k, -1);
+    if (!ok(day(k))) k = addDays(k, -1);
     let n = 0;
-    while (pred(day(k)) && n < 3650) { n++; k = addDays(k, -1); }
+    while (ok(day(k)) && n < 3650) { n++; k = addDays(k, -1); }
     return n;
   }
+  const weekStart = k => { const d = parseKey(k); return addDays(k, -((d.getDay() + 6) % 7)); };
+  const weekKeys = k => { const s0 = weekStart(k); return Array.from({ length: 7 }, (_, i) => addDays(s0, i)); };
+  const ticketLeft = k => !weekKeys(k).some(x => day(x).rest);
+  const PLAN_DEFAULT = { study: "夕ごはんのあとに", exercise: "歯みがきのあとに", stretch: "お風呂あがりに", beauty: "お風呂あがりに", weight: "お風呂に入る前に" };
+  const planOf = id => (state.settings.plans && state.settings.plans[id]) || PLAN_DEFAULT[id];
+  const EASY = { study: "テキストを1ページだけ開く", exercise: "スクワット1回だけ", stretch: "大きく伸びをして深呼吸1回", beauty: "保湿だけする" };
   function stats() {
     let xp = 0, perfect = 0, weighIns = 0, studyMin = 0, recDays = 0;
     const keys = Object.keys(state.days).sort();
@@ -477,7 +523,7 @@ input, textarea { font-size: 16px !important; }
     // best run of days with at least one check
     let best = 0, run = 0, prev = null;
     for (const k of keys) {
-      if (countDone(state.days[k]) === 0) continue;
+      if (countDone(state.days[k]) === 0 && !state.days[k].rest) continue;
       run = prev && addDays(prev, 1) === k ? run + 1 : 1;
       best = Math.max(best, run); prev = k;
     }
@@ -491,6 +537,7 @@ input, textarea { font-size: 16px !important; }
   function menuFor(k, h) {
     if (!h.menu.length) return "";
     const d = day(k);
+    if (d.easy && EASY[h.id]) return EASY[h.id];
     const idx = d.menu && typeof d.menu[h.id] === "number" ? d.menu[h.id] : hashStr(k + h.id) % h.menu.length;
     return h.menu[idx % h.menu.length];
   }
@@ -556,6 +603,35 @@ input, textarea { font-size: 16px !important; }
     $("stPerfect").textContent = s.perfect + "日";
     $("stStudy").textContent = (s.studyMin / 60).toFixed(1) + "h";
     renderQuick(d);
+    // next badge to aim for
+    const goals = [[3, "三日坊主こえ"], [7, "1週間つづいた"], [14, "2週間"], [30, "ひと月の習慣"], [60, "2か月"], [100, "100日"]];
+    const g = goals.find(([n]) => n > s.streak);
+    $("nextGoal").innerHTML = g ? `あと <b>${g[0] - s.streak}日</b> 続けると「${g[1]}」` : `<b>${s.streak}日</b>連続。もう立派な習慣です！`;
+    const left = ticketLeft(state.selected);
+    $("dayBtns").innerHTML = `<button class="btn ${d.easy ? "on" : ""}" data-easy>${d.easy ? "ゆるモード中" : "疲れた日はゆるモード"}</button>` +
+      (d.rest ? `<button class="btn on" data-rest>お休みの日（取り消す）</button>` : c === 0 && left ? `<button class="btn" data-rest>お休みチケットを使う</button>` : "");
+    renderNudge(); renderWeek();
+    if (!$("nudge").hidden) { const rb = $("dayBtns").querySelector("[data-rest]"); if (rb && !d.rest) rb.remove(); }
+  }
+  function renderNudge() {
+    const t = todayKey(), y = addDays(t, -1), yd = day(y), el = $("nudge");
+    const hadBefore = Object.keys(state.days).some(k => k < y && countDone(state.days[k]) > 0);
+    if (state.selected !== t || !hadBefore || countDone(yd) > 0 || yd.rest) { el.hidden = true; el.innerHTML = ""; return; }
+    const left = ticketLeft(y);
+    el.className = "nudge"; el.hidden = false;
+    el.innerHTML = `<b>きのうの記録がまだです</b><p>やったのに付け忘れていたら、今からつけられます。${left ? "休んだ日なら、お休みチケット（週に1枚）で連続記録を守れます。" : "今週のお休みチケットは使用済みです。"}</p>
+      <div class="btnrow"><button class="btn main" data-goto="${y}">きのうの分をつける</button>${left ? `<button class="btn" data-restday="${y}">お休みチケットを使う</button>` : ""}</div>`;
+  }
+  function renderWeek() {
+    const t = todayKey(), ks = weekKeys(t), goal = state.settings.weekGoal || 5;
+    let n = 0;
+    $("week").innerHTML = ks.map(k => { const d = day(k), c = countDone(d); if (c > 0) n++;
+      const cls = ["w", c === 5 ? "full" : c > 0 ? "has" : d.rest ? "rest" : "", k === t ? "today" : ""].join(" ");
+      return `<div class="${cls}">${WD[parseKey(k).getDay()]}<i>${k > t ? "" : d.rest ? "休" : c}</i></div>`; }).join("");
+    $("wgoalText").textContent = `${goal}日チェックする`;
+    $("wgoalNum").textContent = `${n} / ${goal}日`;
+    $("wgoalFill").style.width = Math.min(100, Math.round(n / goal * 100)) + "%";
+    $("ticketInfo").textContent = ticketLeft(t) ? "お休みチケット 残り1枚" : "お休みチケット 使用済み";
   }
   const SHORT = { study: "勉", exercise: "動", stretch: "伸", beauty: "美", weight: "kg" };
   const SHORTNAME = { study: "勉強", exercise: "運動", stretch: "ストレッチ", beauty: "美容", weight: "体重" };
@@ -569,8 +645,8 @@ input, textarea { font-size: 16px !important; }
     $("habits").innerHTML = HABITS.map(h => {
       const done = isDone(d, h.id);
       const st = streakFor(x => isDone(x, h.id));
-      let extra = "";
-      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${h.tag}</span>${menuFor(k, h)}</span><button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button></div>`;
+      let extra = `<div class="when">いつ：<b>${planOf(h.id)}</b></div>`;
+      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${d.easy ? "ゆるモード" : h.tag}</span>${menuFor(k, h)}</span>${d.easy ? "" : `<button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button>`}</div>`;
       if (h.id === "study") {
         const running = !!timer.id;
         extra += `<div class="row"><span class="mins num">${d.studyMin || 0}<small>分</small></span><span class="diff">/ 目標 ${goal}分</span>
@@ -608,7 +684,7 @@ input, textarea { font-size: 16px !important; }
     for (let dd = 1; dd <= n; dd++) {
       const k = `${y}-${pad(mo + 1)}-${pad(dd)}`, d = day(k), c = countDone(d);
       const dots = HABITS.map(h => `<i style="${isDone(d, h.id) ? `background:var(${h.color})` : ""}"></i>`).join("");
-      const cls = ["day", k > t ? "future" : "", k === t ? "today" : "", k === state.selected ? "sel" : "", c === 5 ? "perfect" : ""].join(" ");
+      const cls = ["day", k > t ? "future" : "", k === t ? "today" : "", k === state.selected ? "sel" : "", c === 5 ? "perfect" : "", d.rest ? "rest" : ""].join(" ");
       html += `<button class="${cls}" data-day="${k}" ${k > t ? "disabled" : ""} aria-label="${mo + 1}月${dd}日 ${c}つ達成">${dd}<span class="dots">${dots}</span></button>`;
     }
     $("cal").innerHTML = html;
@@ -655,6 +731,9 @@ input, textarea { font-size: 16px !important; }
     const tw = $("target"), sg = $("studyGoal");
     if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
+    const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
+    if (!$("plans").childElementCount) $("plans").innerHTML = HABITS.map(h => `<label class="plan" for="plan-${h.id}">${h.name.replace(/（.*）/, "")}<input id="plan-${h.id}" data-plan="${h.id}" type="text" maxlength="30" placeholder="${PLAN_DEFAULT[h.id]}"></label>`).join("");
+    HABITS.forEach(h => { const el = $("plan-" + h.id); if (document.activeElement !== el) el.value = (state.settings.plans || {})[h.id] || ""; });
   }
 
   // ---------- fun ----------
@@ -756,6 +835,15 @@ input, textarea { font-size: 16px !important; }
   }
   settingInput("target", "targetWeight", 20, 300);
   settingInput("studyGoal", "studyGoal", 5, 600);
+  settingInput("weekGoal", "weekGoal", 1, 7);
+  $("plans").addEventListener("change", e => { const id = e.target.dataset.plan; if (!id) return;
+    state.settings = { ...state.settings, plans: { ...(state.settings.plans || {}), [id]: e.target.value.trim() } }; queueSave("settings"); lsSave(); render(); toast("「いつやる？」を保存しました"); });
+  $("dayBtns").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const k = state.selected;
+    if (b.hasAttribute("data-easy")) { const on = !day(k).easy; editDay(k, d => { d.easy = on; }); toast(on ? "ゆるモード：ほんの少しでOK。やれば1つ達成です" : "いつものメニューに戻しました"); }
+    if (b.hasAttribute("data-rest")) { const on = !day(k).rest; editDay(k, d => { d.rest = on; }); toast(on ? "お休みの日にしました。連続記録はそのままです" : "お休みを取り消しました"); } });
+  $("nudge").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.goto) selectDay(b.dataset.goto);
+    if (b.dataset.restday) { editDay(b.dataset.restday, d => { d.rest = true; }); toast("お休みチケットを使いました。連続記録はそのままです"); } });
   // date rollover while the page stays open
   let lastToday = todayKey();
   setInterval(() => { const t = todayKey(); if (t !== lastToday) { if (state.selected === lastToday) state.selected = t; lastToday = t; render(); } }, 60000);
