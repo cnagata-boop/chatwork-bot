@@ -44,6 +44,7 @@
 * { box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--ink);
+  background-image: radial-gradient(var(--line) 1px, transparent 1.2px); background-size: 22px 22px;
   font-family: var(--f-body); font-size: 15px; line-height: 1.6;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -176,6 +177,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   .qbtn { --c: var(--accent); flex: 1; min-width: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 0; font-size: 11px; font-weight: 700; color: var(--muted); }
   .qbtn .dot { width: 46px; height: 46px; border-radius: 14px; border: 2.5px dashed var(--c); display: grid; place-items: center; color: var(--c); font-family: var(--f-display); font-size: 17px; font-weight: 900; transition: transform .15s, background .2s; }
   .qbtn .dot svg { width: 24px; height: 24px; }
+  .greet { font-size: 21px; }
   .qbtn.on { color: var(--ink); }
   .qbtn.on .dot { background: var(--c); border-style: solid; color: var(--paper); }
   .qbtn:active .dot { transform: scale(.9); }
@@ -186,14 +188,48 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 }
 input, textarea { font-size: 16px !important; }
 .weightin input { font-size: 20px !important; }
+/* sky header: colors follow the time of day */
+.sky { position: relative; overflow: hidden; border-radius: 26px; padding: 20px 20px 18px; color: var(--sky-ink); background: linear-gradient(160deg, var(--s1), var(--s2)); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px; }
+.sky.t-morning { --s1: #ffd3a3; --s2: #fff1c9; --sky-ink: #4b2a10; --orb: #ffb23e; }
+.sky.t-day     { --s1: #a9e3f5; --s2: #d9f6e4; --sky-ink: #12384a; --orb: #ffd34d; }
+.sky.t-evening { --s1: #ffa98f; --s2: #ffd7a1; --sky-ink: #4a1d14; --orb: #ff7a4d; }
+.sky.t-night   { --s1: #1b2b55; --s2: #2e4a7a; --sky-ink: #f2f5ff; --orb: #ffe9a6; }
+.orb { position: absolute; right: -26px; top: -26px; width: 120px; height: 120px; border-radius: 50%; background: var(--orb); opacity: .9; box-shadow: 0 0 0 18px color-mix(in srgb, var(--orb) 25%, transparent), 0 0 0 40px color-mix(in srgb, var(--orb) 12%, transparent); }
+.sky.t-night .orb { width: 80px; height: 80px; right: 18px; top: 14px; box-shadow: inset -16px -6px 0 0 #2a4372; }
+.stars { position: absolute; inset: 0; pointer-events: none; display: none; }
+.sky.t-night .stars { display: block; }
+.stars i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; opacity: .8; animation: twinkle 2.6s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .2; } }
+.sky .brand, .sky .brand small { color: var(--sky-ink); position: relative; }
+.greet { position: relative; font-family: var(--f-display); font-weight: 900; font-size: 24px; line-height: 1.35; }
+.quote { position: relative; font-size: 13px; font-weight: 500; opacity: .85; max-width: 30em; }
+.sky .level { align-self: flex-start; position: relative; }
+/* mascot in the ring */
+.mascot { width: 76px; height: 76px; }
+.mascot.bounce { animation: bounce .6s ease; }
+@keyframes bounce { 30% { transform: translateY(-10px) scale(1.06); } 60% { transform: translateY(0) scale(.97); } }
+.count { font-family: var(--f-display); font-size: 15px; font-weight: 700; color: var(--muted); }
+.count b { font-size: 30px; color: var(--ink); font-family: var(--f-num); }
+/* sticker cards */
+.habit { position: relative; overflow: hidden; }
+.habit.done { background: color-mix(in srgb, var(--c) 10%, var(--paper)); }
+.check .ico { width: 30px; height: 30px; }
+.stamp { position: absolute; right: 12px; bottom: 10px; font-family: var(--f-display); font-weight: 900; font-size: 13px; color: var(--c); border: 2px solid var(--c); border-radius: 8px; padding: 0 8px; transform: rotate(-10deg); opacity: .85; pointer-events: none; }
+.habit.pop .stamp { animation: stamp .4s ease; }
+@keyframes stamp { 0% { transform: rotate(-10deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-10deg) scale(1); opacity: .85; } }
+.plus { position: fixed; z-index: 16; pointer-events: none; font-family: var(--f-display); font-weight: 900; font-size: 18px; color: var(--c); animation: floatup .9s ease-out forwards; }
+@keyframes floatup { to { transform: translateY(-60px); opacity: 0; } }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 
 <canvas id="confetti" aria-hidden="true"></canvas>
 <div class="wrap">
-  <header class="top">
-    <h1 class="brand">まいにちルーティン帳<small>勉強・運動・ストレッチ・美容・体重を、ひとつで。</small></h1>
+  <header class="sky" id="sky">
+    <div class="orb" aria-hidden="true"></div>
+    <div class="stars" id="stars" aria-hidden="true"></div>
+    <h1 class="brand">まいにちルーティン帳</h1>
+    <div><div class="greet" id="greet">おはよう！</div><div class="quote" id="quote"></div></div>
     <div class="level" aria-label="レベル">
       <div class="lv"><div><span>Lv</span><b id="lvNum">1</b></div></div>
       <div class="meta">
@@ -212,8 +248,9 @@ input, textarea { font-size: 16px !important; }
 
   <div class="swipehint">左右にスワイプで日付を切り替え</div>
   <section class="hero" aria-label="今日の達成状況">
-    <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center"><div><b id="ringNum">0</b><span>/ 5 達成</span></div></div></div>
+    <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center" id="mascot"></div></div>
     <div>
+      <div class="count"><b id="ringNum">0</b> / 5 できた</div>
       <div class="msg" id="heroMsg">さあ、今日のひとつ目から。</div>
       <div class="stats">
         <div class="stat"><b id="stStreak">0</b><span class="label">連続日数</span></div>
@@ -288,6 +325,39 @@ input, textarea { font-size: 16px !important; }
     { id: "h10", ic: "10h", name: "勉強10時間", desc: "勉強の合計10時間", test: s => s.studyMin >= 600 },
     { id: "h50", ic: "50h", name: "勉強50時間", desc: "勉強の合計50時間", test: s => s.studyMin >= 3000 },
   ];
+  const ICON = {
+    study: '<path d="M3 5.5C3 4.7 3.7 4 4.5 4H11v16H4.5A1.5 1.5 0 0 1 3 18.5z"/><path d="M21 5.5c0-.8-.7-1.5-1.5-1.5H13v16h6.5c.8 0 1.5-.7 1.5-1.5z"/><path d="M6 8h2.5M6 11h2.5M15.5 8H18"/>',
+    exercise: '<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
+    stretch: '<circle cx="12" cy="4.5" r="2"/><path d="M12 8v6M12 9.5 5 6M12 9.5 19 6M12 14l-4 6.5M12 14l4 6.5"/>',
+    beauty: '<path d="M11 3.5l1.8 4.7 4.7 1.8-4.7 1.8L11 16.5l-1.8-4.7L4.5 10l4.7-1.8z"/><path d="M18.5 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+    weight: '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.5 10a4.6 4.6 0 0 1 7 0"/><path d="M12 10.2l1.6-1.8"/>',
+  };
+  const icon = id => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[id]}</svg>`;
+  // mascot face: mood 0 (sleepy) .. 5 (sparkly)
+  function mascotSvg(c) {
+    const eyes = c === 0 ? '<path d="M27 40q4 3 8 0M45 40q4 3 8 0" stroke="#24303f" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
+      : c >= 5 ? '<path d="M31 34l1.6 3.4 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5zM49 34l1.6 3.4 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#24303f"/>'
+      : c >= 3 ? '<path d="M27 41q4-5 8 0M45 41q4-5 8 0" stroke="#24303f" stroke-width="2.8" fill="none" stroke-linecap="round"/>'
+      : '<circle cx="31" cy="39" r="3.4" fill="#24303f"/><circle cx="49" cy="39" r="3.4" fill="#24303f"/><circle cx="32.2" cy="37.8" r="1.1" fill="#fff"/><circle cx="50.2" cy="37.8" r="1.1" fill="#fff"/>';
+    const mouth = c === 0 ? '<path d="M37 51h6" stroke="#24303f" stroke-width="2.4" stroke-linecap="round"/>'
+      : c <= 2 ? '<path d="M35 49q5 5 10 0" stroke="#24303f" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
+      : '<path d="M33 47.5q7 10 14 0z" fill="#24303f"/><path d="M36.5 51.5q3.5 2.6 7 0" fill="#ff7a8a"/>';
+    const zz = c === 0 ? '<text x="58" y="20" font-size="12" font-weight="700" fill="var(--muted)" font-family="var(--f-display)">z z</text>' : "";
+    return `<svg class="mascot" viewBox="0 0 80 80" role="img" aria-label="きょうの気分">
+      <path d="M40 8c17 0 30 12 30 30 0 19-12 32-30 32S10 57 10 38C10 20 23 8 40 8z" fill="#ffe7a8" stroke="#f0b94a" stroke-width="2"/>
+      <path d="M40 8c2-5 7-6 9-3-3 0-6 1.5-9 3z" fill="#5fbf7f"/>
+      <ellipse cx="24" cy="48" rx="5" ry="3.2" fill="#ffaab4" opacity="${c ? .9 : .4}"/><ellipse cx="56" cy="48" rx="5" ry="3.2" fill="#ffaab4" opacity="${c ? .9 : .4}"/>
+      ${eyes}${mouth}${zz}</svg>`;
+  }
+  const QUOTES = ["小さな一歩も、毎日なら大きな道になる。", "完璧じゃなくていい。ゼロにしないのが大事。", "今日の自分は、きのうの自分より少しだけ前へ。", "続けた日数は、ちゃんと自分の味方になる。", "疲れた日は1つだけでも花まる。", "ストレッチ1分でも、体はちゃんと喜んでる。", "がんばった自分を、今日もほめてあげよう。", "習慣は、ゆっくり育つ植物みたいなもの。"];
+  function renderSky() {
+    const h = new Date().getHours();
+    const t = h >= 5 && h < 10 ? "morning" : h >= 10 && h < 16 ? "day" : h >= 16 && h < 19 ? "evening" : "night";
+    $("sky").className = "sky t-" + t;
+    $("greet").textContent = { morning: "おはよう！今日もいい一日に。", day: "こんにちは！ひと息ついてルーティン。", evening: "おつかれさま！夜のルーティンへ。", night: "こんばんは。お風呂の前に体重をはかろう。" }[t];
+    $("quote").textContent = QUOTES[hashStr(todayKey()) % QUOTES.length];
+    if (!$("stars").childElementCount) $("stars").innerHTML = Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 37 + 11) % 100}%;top:${(i * 53 + 7) % 90}%;animation-delay:${(i % 5) * .5}s"></i>`).join("");
+  }
   const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
   const $ = id => document.getElementById(id);
@@ -454,6 +524,7 @@ input, textarea { font-size: 16px !important; }
     renderHeader(); renderHero(); renderHabits(); renderMemo(); renderCal(); renderChart(); renderBadges(); renderSettings();
   }
   function renderHeader() {
+    renderSky();
     const s = stats(), L = levelOf(s.xp);
     $("lvNum").textContent = L.lv;
     $("lvTitle").textContent = TITLES[Math.min(L.lv - 1, TITLES.length - 1)];
@@ -475,6 +546,7 @@ input, textarea { font-size: 16px !important; }
         stroke-dasharray="${seg - gap} ${C - seg + gap}" stroke-dashoffset="${-i * seg}" transform="rotate(-90 60 60)"/>`;
     }).join("");
     $("ringNum").textContent = c;
+    const m = $("mascot"); if (m.dataset.c !== String(c)) { m.innerHTML = mascotSvg(c); if (m.dataset.c != null) m.firstChild.classList.add("bounce"); m.dataset.c = c; }
     const isToday = state.selected === todayKey();
     const msgs = isToday
       ? ["さあ、今日のひとつ目から。", "いいスタート！その調子。", "もう2つ。ペースいいです。", "半分こえました！", "あとひとつで全部！", "今日はパーフェクト！自分をほめよう。"]
@@ -489,7 +561,7 @@ input, textarea { font-size: 16px !important; }
   const SHORTNAME = { study: "勉強", exercise: "運動", stretch: "ストレッチ", beauty: "美容", weight: "体重" };
   function renderQuick(d) {
     $("quick").innerHTML = HABITS.map(h => { const on = isDone(d, h.id);
-      return `<button class="qbtn ${on ? "on" : ""}" style="--c: var(${h.color})" data-toggle="${h.id}" aria-pressed="${on}" aria-label="${h.name}を${on ? "未完了にする" : "完了にする"}"><span class="dot">${on ? CHECK_SVG : SHORT[h.id]}</span>${SHORTNAME[h.id]}</button>`; }).join("");
+      return `<button class="qbtn ${on ? "on" : ""}" style="--c: var(${h.color})" data-toggle="${h.id}" aria-pressed="${on}" aria-label="${h.name}を${on ? "未完了にする" : "完了にする"}"><span class="dot">${on ? CHECK_SVG : icon(h.id)}</span>${SHORTNAME[h.id]}</button>`; }).join("");
   }
   function renderHabits() {
     const k = state.selected, d = day(k);
@@ -518,8 +590,8 @@ input, textarea { font-size: 16px !important; }
           <div class="diff">${diffTxt || "夜、お風呂に入るときにはかろう。毎日同じタイミングだと変化が分かりやすいです。"}</div>`;
       }
       return `<article class="habit ${done ? "done" : ""}" style="--c: var(${h.color})" data-h="${h.id}">
-        <button class="check" data-toggle="${h.id}" aria-pressed="${done}" aria-label="${h.name}を${done ? "未完了にする" : "完了にする"}">${done ? CHECK_SVG : ""}</button>
-        <div class="hbody"><div class="hhead"><span class="hname">${h.name}</span><span class="streak">連続 <b>${st}</b> 日</span></div>${extra}</div>
+        <button class="check" data-toggle="${h.id}" aria-pressed="${done}" aria-label="${h.name}を${done ? "未完了にする" : "完了にする"}">${done ? CHECK_SVG : icon(h.id)}</button>
+        ${done ? '<span class="stamp" aria-hidden="true">できた！</span>' : ""}<div class="hbody"><div class="hhead"><span class="hname">${h.name}</span><span class="streak">連続 <b>${st}</b> 日</span></div>${extra}</div>
       </article>`;
     }).join("");
   }
@@ -608,6 +680,13 @@ input, textarea { font-size: 16px !important; }
     if (after === 5 && before < 5) { toast("パーフェクト達成！+20XPボーナス"); celebrate(); }
     else toast(`${h.name} ${CHEERS[Math.floor(Math.random() * CHEERS.length)]} +10XP`);
     const card = document.querySelector(`[data-h="${h.id}"]`); if (card) card.classList.add("pop");
+    const src = document.querySelector(`#quick [data-toggle="${h.id}"]`)?.offsetParent ? document.querySelector(`#quick [data-toggle="${h.id}"]`) : card && card.querySelector(".check");
+    if (src && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const r = src.getBoundingClientRect(), el = document.createElement("div");
+      el.className = "plus"; el.style.setProperty("--c", `var(${h.color})`); el.textContent = "+10";
+      el.style.left = (r.left + r.width / 2 - 14) + "px"; el.style.top = (r.top - 6) + "px";
+      document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
+    }
   }
 
   // ---------- events ----------
