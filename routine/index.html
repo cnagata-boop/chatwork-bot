@@ -608,7 +608,7 @@ body { background-color: var(--bg) !important;
     editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin > 0; });
     if (add > 0 && !was) afterCheck(k, HABITS[0], before);
   }
-  const SNS_DEFAULT = ["Instagram 投稿", "ストーリーズ", "リール", "X", "note"];
+  const SNS_DEFAULT = ["Instagram 投稿", "ストーリーズ", "リール", "X", "note", "LINEスタンプ"];
   const snsTypes = () => Array.isArray(state.settings.snsTypes) ? state.settings.snsTypes : SNS_DEFAULT;
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function renderSky() {
