@@ -614,7 +614,9 @@ body { background-color: var(--bg) !important;
   const SUBJ_DEFAULT = ["国徴", "簿記論", "財表", "大学院の課題"], SUBJ_COLOR = ["--study", "--stretch", "--weight", "--beauty"], SUBJ_IDX = [0, 1, 2, 3];
   const subjects = () => SUBJ_IDX.map(i => (state.settings.subjects || [])[i] || SUBJ_DEFAULT[i]);
   const hm = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}時間${r}分` : `${h}時間`) : `${r}分`; };
-  const subjLink = i => { const u = ((state.settings.subjLinks || [])[i] || "").trim(); return /^https:\/\/\S+$/i.test(u) ? u : ""; };
+  const SUBJ_LINK_DEFAULT = ["https://motax.jp/blog/2023riron/", "", "", ""];
+  const subjLinkRaw = i => (state.settings.subjLinks || [])[i] ?? SUBJ_LINK_DEFAULT[i];
+  const subjLink = i => { const u = (subjLinkRaw(i) || "").trim(); return /^https:\/\/\S+$/i.test(u) ? u : ""; };
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
@@ -1107,7 +1109,7 @@ body { background-color: var(--bg) !important;
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
     const st = $("snsTypes"); if (document.activeElement !== st) st.value = snsTypes().join("\n");
     if (!$("subjLinks").childElementCount) $("subjLinks").innerHTML = SUBJ_IDX.map(i => `<label for="slink-${i}"><span id="slabel-${i}"></span><input id="slink-${i}" data-slink="${i}" type="url" inputmode="url" placeholder="https://www.youtube.com/..." style="width:200px;font-family:var(--f-body)"></label>`).join("");
-    SUBJ_IDX.forEach(i => { $("slabel-" + i).textContent = subjects()[i]; const el = $("slink-" + i); if (document.activeElement !== el) el.value = (state.settings.subjLinks || [])[i] || ""; });
+    SUBJ_IDX.forEach(i => { $("slabel-" + i).textContent = subjects()[i]; const el = $("slink-" + i); if (document.activeElement !== el) el.value = subjLinkRaw(i) || ""; });
     SUBJ_IDX.forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
     $("zumbaDays").innerHTML = WD.map((w, i) => `<button class="chip ${zumbaDays().includes(i) ? "primary" : ""}" style="--c: var(--exercise)" data-zd="${i}" aria-pressed="${zumbaDays().includes(i)}">${w}</button>`).join("");
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
@@ -1249,7 +1251,7 @@ body { background-color: var(--bg) !important;
   $("subjLinks").addEventListener("change", e => { const i = e.target.dataset.slink; if (i == null) return;
     const v = e.target.value.trim();
     if (v && !/^https:\/\/\S+$/i.test(v)) { toast("https:// から始まるリンクを貼りつけてください"); return; }
-    const arr = SUBJ_IDX.map(j => (state.settings.subjLinks || [])[j] || ""); arr[i] = v;
+    const arr = SUBJ_IDX.map(j => subjLinkRaw(j) || ""); arr[i] = v;
     state.settings = { ...state.settings, subjLinks: arr }; queueSave("settings"); lsSave(); render(); toast(v ? "動画リンクを保存しました" : "動画リンクを消しました"); });
   document.querySelector(".settings").addEventListener("change", e => { const i = e.target.dataset.sname; if (i == null) return;
     const arr = SUBJ_IDX.map(j => (state.settings.subjects || [])[j] || ""); arr[i] = e.target.value.trim();
