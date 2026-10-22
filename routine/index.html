@@ -439,6 +439,9 @@ body { background-color: var(--bg) !important;
 .snst { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .snst .sj b { font-size: 11px; font-weight: 500; color: var(--muted); }
 .snst .sj.on b { color: var(--c); }
+.vlink { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--c); color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+.vlink .play { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 12px; padding-left: 2px; }
+.vlink:active { transform: scale(.98); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -540,6 +543,8 @@ body { background-color: var(--bg) !important;
       <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="簿記論"></label>
       <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="財表"></label>
       <label for="subj-3">科目4<input id="subj-3" data-sname="3" type="text" maxlength="12" placeholder="大学院の課題"></label>
+      <div class="label" style="margin-top:6px">科目ごとの動画・教材のリンク（https:// から貼りつけ）</div>
+      <div id="subjLinks" style="display:flex;flex-direction:column;gap:8px"></div>
       <label for="snsTypes" style="align-items:flex-start">SNS投稿の種類（1行に1つ）<textarea id="snsTypes" rows="4" style="width:180px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)"></textarea></label>
       <div class="label" style="margin-top:6px">ZUMBAに行く曜日</div>
       <div class="row" id="zumbaDays"></div>
@@ -609,6 +614,7 @@ body { background-color: var(--bg) !important;
   const SUBJ_DEFAULT = ["国徴", "簿記論", "財表", "大学院の課題"], SUBJ_COLOR = ["--study", "--stretch", "--weight", "--beauty"], SUBJ_IDX = [0, 1, 2, 3];
   const subjects = () => SUBJ_IDX.map(i => (state.settings.subjects || [])[i] || SUBJ_DEFAULT[i]);
   const hm = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}時間${r}分` : `${h}時間`) : `${r}分`; };
+  const subjLink = i => { const u = ((state.settings.subjLinks || [])[i] || "").trim(); return /^https:\/\/\S+$/i.test(u) ? u : ""; };
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
@@ -777,7 +783,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -991,6 +997,7 @@ body { background-color: var(--bg) !important;
         const names = subjects(), sel = state.subj || 0;
         const totals = SUBJ_IDX.map(i => Object.values(state.days).reduce((a, x) => a + subjMin(x, i), 0));
         extra += `<div class="subj" role="group" aria-label="科目をえらぶ">${names.map((n, i) => `<button class="sj ${i === sel ? "on" : ""}" style="--c: var(${SUBJ_COLOR[i]})" data-subj="${i}" aria-pressed="${i === sel}"><span>${n}</span><b class="num">${subjMin(d, i)}分</b></button>`).join("")}</div>
+          ${subjLink(sel) ? `<a class="vlink" href="${esc(subjLink(sel))}" target="_blank" rel="noopener noreferrer" style="--c: var(${SUBJ_COLOR[sel]})"><span class="play">▶</span><span>${esc(names[sel])}の動画をひらく</span></a>` : `<div class="diff">設定で「${esc(names[sel])}」の動画リンクを入れると、ここから1タップで開けます。</div>`}
           <div class="row studyin"><span class="diff">「${names[sel]}」に</span>
           <input id="studyIn" type="number" min="1" max="720" step="1" inputmode="numeric" placeholder="例 90" aria-label="${names[sel]}の勉強時間（分）"><span class="diff">分</span>
           <button class="chip primary" data-sadd>記録</button></div>
@@ -1099,6 +1106,8 @@ body { background-color: var(--bg) !important;
     if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
     const st = $("snsTypes"); if (document.activeElement !== st) st.value = snsTypes().join("\n");
+    if (!$("subjLinks").childElementCount) $("subjLinks").innerHTML = SUBJ_IDX.map(i => `<label for="slink-${i}"><span id="slabel-${i}"></span><input id="slink-${i}" data-slink="${i}" type="url" inputmode="url" placeholder="https://www.youtube.com/..." style="width:200px;font-family:var(--f-body)"></label>`).join("");
+    SUBJ_IDX.forEach(i => { $("slabel-" + i).textContent = subjects()[i]; const el = $("slink-" + i); if (document.activeElement !== el) el.value = (state.settings.subjLinks || [])[i] || ""; });
     SUBJ_IDX.forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
     $("zumbaDays").innerHTML = WD.map((w, i) => `<button class="chip ${zumbaDays().includes(i) ? "primary" : ""}" style="--c: var(--exercise)" data-zd="${i}" aria-pressed="${zumbaDays().includes(i)}">${w}</button>`).join("");
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
@@ -1237,6 +1246,11 @@ body { background-color: var(--bg) !important;
   $("snsTypes").addEventListener("change", e => {
     const arr = [...new Set(e.target.value.split("\n").map(x => x.trim()).filter(Boolean))].slice(0, 10);
     state.settings = { ...state.settings, snsTypes: arr }; queueSave("settings"); lsSave(); render(); toast("投稿の種類を保存しました"); });
+  $("subjLinks").addEventListener("change", e => { const i = e.target.dataset.slink; if (i == null) return;
+    const v = e.target.value.trim();
+    if (v && !/^https:\/\/\S+$/i.test(v)) { toast("https:// から始まるリンクを貼りつけてください"); return; }
+    const arr = SUBJ_IDX.map(j => (state.settings.subjLinks || [])[j] || ""); arr[i] = v;
+    state.settings = { ...state.settings, subjLinks: arr }; queueSave("settings"); lsSave(); render(); toast(v ? "動画リンクを保存しました" : "動画リンクを消しました"); });
   document.querySelector(".settings").addEventListener("change", e => { const i = e.target.dataset.sname; if (i == null) return;
     const arr = SUBJ_IDX.map(j => (state.settings.subjects || [])[j] || ""); arr[i] = e.target.value.trim();
     state.settings = { ...state.settings, subjects: arr }; queueSave("settings"); lsSave(); render(); toast("科目名を保存しました"); });
