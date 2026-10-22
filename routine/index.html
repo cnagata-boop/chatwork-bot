@@ -442,6 +442,12 @@ body { background-color: var(--bg) !important;
 .vlink { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--c); color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
 .vlink .play { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 12px; padding-left: 2px; }
 .vlink:active { transform: scale(.98); }
+.vrow { display: flex; align-items: center; gap: 8px; }
+.vrow .vlink { flex: 1; min-width: 0; }
+.keybtn { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font-size: 18px; }
+.keybtn[aria-expanded="true"] { border-color: var(--c); }
+.keybox { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; }
+.keybox input { flex: 1; min-width: 0; font-family: var(--f-body); padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -785,7 +791,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -999,7 +1005,12 @@ body { background-color: var(--bg) !important;
         const names = subjects(), sel = state.subj || 0;
         const totals = SUBJ_IDX.map(i => Object.values(state.days).reduce((a, x) => a + subjMin(x, i), 0));
         extra += `<div class="subj" role="group" aria-label="科目をえらぶ">${names.map((n, i) => `<button class="sj ${i === sel ? "on" : ""}" style="--c: var(${SUBJ_COLOR[i]})" data-subj="${i}" aria-pressed="${i === sel}"><span>${n}</span><b class="num">${subjMin(d, i)}分</b></button>`).join("")}</div>
-          ${subjLink(sel) ? `<a class="vlink" href="${esc(subjLink(sel))}" target="_blank" rel="noopener noreferrer" style="--c: var(${SUBJ_COLOR[sel]})"><span class="play">▶</span><span>${esc(names[sel])}の動画をひらく</span></a>` : `<div class="diff">設定で「${esc(names[sel])}」の動画リンクを入れると、ここから1タップで開けます。</div>`}
+          <div class="vrow">${subjLink(sel) ? `<a class="vlink" href="${esc(subjLink(sel))}" target="_blank" rel="noopener noreferrer" style="--c: var(${SUBJ_COLOR[sel]})"><span class="play">▶</span><span>${esc(names[sel])}の動画をひらく</span></a>` : `<div class="diff" style="flex:1">設定で「${esc(names[sel])}」の動画リンクを入れると、ここから1タップで開けます。</div>`}
+            <button class="keybtn" data-key aria-expanded="${!!state.keyOpen}" aria-label="${esc(names[sel])}のパスワード">🔑</button></div>
+          ${state.keyOpen ? `<div class="keybox"><label for="pw">${esc(names[sel])}のパスワード</label>
+            <div class="row"><input id="pw" data-pw="${sel}" type="${state.pwShow ? "text" : "password"}" autocomplete="off" placeholder="ここに貼りつけ" value="${esc((state.settings.subjPw || [])[sel] || "")}">
+            <button class="chip" data-pwshow>${state.pwShow ? "かくす" : "見る"}</button><button class="chip primary" data-pwcopy>コピー</button></div>
+            <div class="diff">あなた専用の場所に保存されます。暗号化はされないので、このアプリのリンクは人に共有しないでください。</div></div>` : ""}
           <div class="row studyin"><span class="diff">「${names[sel]}」に</span>
           <input id="studyIn" type="number" min="1" max="720" step="1" inputmode="numeric" placeholder="例 90" aria-label="${names[sel]}の勉強時間（分）"><span class="diff">分</span>
           <button class="chip primary" data-sadd>記録</button></div>
@@ -1172,6 +1183,14 @@ body { background-color: var(--bg) !important;
       editDay(k, d => { d.sns = { ...(d.sns || {}) }; if (d.sns[t]) delete d.sns[t]; else d.sns[t] = true;
         const types = snsTypes(); d.done.sns = types.some(x => d.sns[x]); });
       if (!was && isDone(day(k), "sns")) afterCheck(k, HABITS.find(x => x.id === "sns"), before);
+    } else if (b.hasAttribute("data-key")) {
+      state.keyOpen = !state.keyOpen; state.pwShow = false; renderHabits();
+    } else if (b.hasAttribute("data-pwshow")) {
+      state.pwShow = !state.pwShow; renderHabits();
+    } else if (b.hasAttribute("data-pwcopy")) {
+      const v = $("pw").value;
+      if (!v) { toast("先にパスワードを貼りつけてください"); return; }
+      navigator.clipboard.writeText(v).then(() => toast("コピーしました"), () => { $("pw").type = "text"; $("pw").select(); toast("選択したので、長押ししてコピーしてください"); });
     } else if (b.hasAttribute("data-sadd")) {
       const v = Math.round(Number($("studyIn").value));
       if (!(v >= 1 && v <= 720)) { toast("1〜720 の分数で入れてください（例：90）"); return; }
@@ -1214,6 +1233,9 @@ body { background-color: var(--bg) !important;
     if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
     if (dx > 0) selectDay(addDays(state.selected, -1)); else if (state.selected < todayKey()) selectDay(addDays(state.selected, 1));
   }, { passive: true });
+  $("habits").addEventListener("change", e => { const i = e.target.dataset.pw; if (i == null) return;
+    const arr = SUBJ_IDX.map(j => (state.settings.subjPw || [])[j] || ""); arr[i] = e.target.value;
+    state.settings = { ...state.settings, subjPw: arr }; queueSave("settings"); lsSave(); toast(e.target.value ? "パスワードを保存しました" : "パスワードを消しました"); });
   $("habits").addEventListener("keydown", e => { if (e.target.id === "studyIn" && e.key === "Enter") { e.preventDefault(); document.querySelector("[data-sadd]").click(); } });
   $("habits").addEventListener("keydown", e => { if (e.target.id === "weightIn" && e.key === "Enter") { e.preventDefault(); saveWeight(); } });
   function saveWeight() {
