@@ -605,7 +605,7 @@ body { background-color: var(--bg) !important;
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
-    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); if (add > 0) d.done.study = true; });
+    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin > 0; });
     if (add > 0 && !was) afterCheck(k, HABITS[0], before);
   }
   const SNS_DEFAULT = ["Instagram 投稿", "ストーリーズ", "リール", "X"];
@@ -1174,6 +1174,13 @@ body { background-color: var(--bg) !important;
       if (wasDone) { editDay(k, d => { d.weight = null; }); return; }
       const inp = $("weightIn");
       if (inp) { inp.scrollIntoView({ block: "center", behavior: "smooth" }); inp.focus({ preventScroll: true }); toast("体重を入れて「記録」を押してください"); }
+      return;
+    }
+    if (h.id === "study") {
+      // study is done by entering time, like the weight
+      const inp = $("studyIn");
+      if (inp) { inp.scrollIntoView({ block: "center", behavior: "smooth" }); inp.focus({ preventScroll: true }); }
+      toast(wasDone ? "時間を足すときは分を入れて「記録」、消すときは「取り消し」" : "科目をえらんで、勉強した分を入れて「記録」を押してください");
       return;
     }
     editDay(k, d => { d.done[h.id] = !wasDone; });
