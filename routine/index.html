@@ -1001,7 +1001,7 @@ body { background-color: var(--bg) !important;
         const cnt = t => Object.entries(state.days).filter(([dk, x]) => dk.startsWith(mon) && x.sns && x.sns[t]).length;
         extra += types.length ? `<div class="snst">${types.map(t => { const on = !!(d.sns && d.sns[t]);
             return `<button class="sj ${on ? "on" : ""}" data-sns="${esc(t)}" aria-pressed="${on}"><span>${on ? "✓ " : ""}${esc(t)}</span><b class="num">今月${cnt(t)}回</b></button>`; }).join("")}</div>
-          <div class="diff">${types.filter(t => d.sns && d.sns[t]).length} / ${types.length} 投稿済み・全部投稿すると完了になります</div>`
+          <div class="diff">${types.filter(t => d.sns && d.sns[t]).length} / ${types.length} 投稿済み・どれか1つ投稿できたら完了です</div>`
           : `<div class="diff">設定で「投稿の種類」を入れると、種類ごとに記録できます。</div>`;
       }
       if (h.id === "weight") {
@@ -1152,7 +1152,7 @@ body { background-color: var(--bg) !important;
     } else if (b.dataset.sns != null) {
       const t = b.dataset.sns, before = countDone(day(k)), was = isDone(day(k), "sns");
       editDay(k, d => { d.sns = { ...(d.sns || {}) }; if (d.sns[t]) delete d.sns[t]; else d.sns[t] = true;
-        const types = snsTypes(); d.done.sns = types.length > 0 && types.every(x => d.sns[x]); });
+        const types = snsTypes(); d.done.sns = types.some(x => d.sns[x]); });
       if (!was && isDone(day(k), "sns")) afterCheck(k, HABITS.find(x => x.id === "sns"), before);
     } else if (b.hasAttribute("data-sadd")) {
       const v = Math.round(Number($("studyIn").value));
