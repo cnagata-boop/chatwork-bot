@@ -384,6 +384,12 @@ body { background-color: var(--bg) !important;
 .btn.main { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .day.perfect, .week .w.full i { background: var(--accent) !important; color: #fff; }
 .stat b { color: var(--ink) !important; }
+/* big "できた！" stamp */
+.habit .stamp { position: relative; display: inline-block; vertical-align: middle; margin-left: 10px; top: -2px; right: auto; bottom: auto; left: auto; font-family: var(--f-display); font-weight: 900 !important; font-size: 24px; letter-spacing: .06em;
+  padding: 2px 14px 3px; border: 3px double var(--c); border-radius: 10px; color: var(--c); background: color-mix(in srgb, var(--paper) 82%, transparent);
+  transform: rotate(-9deg); opacity: .95; z-index: 1; text-shadow: 0 1px 0 var(--paper); }
+.habit.pop .stamp { animation: bigstamp .55s cubic-bezier(.2,1.6,.4,1); }
+@keyframes bigstamp { 0% { transform: rotate(-9deg) scale(2.6); opacity: 0; } 60% { transform: rotate(-9deg) scale(.92); opacity: 1; } 100% { transform: rotate(-9deg) scale(1); opacity: .95; } }
 /* skin picker */
 .hero { background: linear-gradient(var(--paper), var(--paper)) padding-box, var(--hero-ring, linear-gradient(var(--line), var(--line))) border-box !important; border: 2px solid transparent !important; }
 .stats .stat:nth-child(1) b { color: var(--n1, var(--ink)) !important; } .stats .stat:nth-child(2) b { color: var(--n2, var(--ink)) !important; } .stats .stat:nth-child(3) b { color: var(--n3, var(--ink)) !important; }
@@ -1017,7 +1023,7 @@ body { background-color: var(--bg) !important;
       }
       return `<article class="habit ${done ? "done" : ""}" style="--c: var(${h.color})" data-h="${h.id}">
         <button class="check" data-toggle="${h.id}" aria-pressed="${done}" aria-label="${h.name}を${done ? "未完了にする" : "完了にする"}">${done ? CHECK_SVG : icon(h.id)}</button>
-        ${done ? '<span class="stamp" aria-hidden="true">できた！</span>' : ""}<div class="hbody"><div class="hhead"><span class="hname">${h.name}</span><span class="streak">連続 <b>${st}</b> 日</span></div>${extra}</div>
+        <div class="hbody"><div class="hhead"><span class="hname">${h.name}${done ? '<span class="stamp" aria-hidden="true">できた！</span>' : ""}</span><span class="streak">連続 <b>${st}</b> 日</span></div>${extra}</div>
       </article>`;
     }).join("");
   }
