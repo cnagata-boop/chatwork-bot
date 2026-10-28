@@ -591,7 +591,7 @@ body { background-color: var(--bg) !important;
       <label for="examHours">試験までの目標勉強時間（合計・時間）<input id="examHours" type="number" min="1" max="10000" step="10" inputmode="numeric" placeholder="例 500"></label>
       <div class="label" style="margin-top:6px">ZUMBAに行く曜日</div>
       <div class="row" id="zumbaDays"></div>
-      <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
+      <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="120"></label>
       <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
       <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
       <div id="plans" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -845,7 +845,7 @@ body { background-color: var(--bg) !important;
     fn(d); state.days[k] = d; queueSave(k); lsSave(); render();
   }
   // study counts only when the day's goal is reached (old toggle-only days still count)
-  const studyGoal = () => state.settings.studyGoal || 30;
+  const studyGoal = () => state.settings.studyGoal || 120;
   const isDone = (d, h) => h === "weight" ? typeof d.weight === "number"
     : h === "study" ? ((d.studyMin || 0) >= studyGoal() || (!(d.studyMin > 0) && !!(d.done && d.done.study)))
     : !!(d.done && d.done[h]);
@@ -1033,7 +1033,7 @@ body { background-color: var(--bg) !important;
     const thisW = weekKeys(t).reduce((a, x) => a + mins(x), 0), lastW = weekKeys(addDays(t, -7)).slice(0, nDays).reduce((a, x) => a + mins(x), 0);
     const diff = lastW ? Math.round((thisW - lastW) / lastW * 100) : null;
     const bestDay = studied.reduce((b, x) => mins(x) > (b ? mins(b) : 0) ? x : b, null);
-    const goal = state.settings.studyGoal || 30, today = mins(t);
+    const goal = state.settings.studyGoal || 120, today = mins(t);
     // exam countdown
     const exam = state.settings.examDate || "2027-08-03", left = Math.round((parseKey(exam) - parseKey(t)) / 86400000);
     const pace = Array.from({ length: 28 }, (_, j) => mins(addDays(t, -j))).reduce((a, b) => a + b, 0) / 28;
@@ -1084,7 +1084,7 @@ body { background-color: var(--bg) !important;
   }
   function renderHabits() {
     const k = state.selected, d = day(k);
-    const goal = state.settings.studyGoal || 30;
+    const goal = state.settings.studyGoal || 120;
     $("habits").innerHTML = HABITS.map(h => {
       const done = isDone(d, h.id);
       const st = streakFor(x => isDone(x, h.id));
