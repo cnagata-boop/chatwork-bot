@@ -466,6 +466,17 @@ body { background-color: var(--bg) !important;
 .heat .l4, .hlegend .l4 { background: var(--study); }
 .hlegend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--muted); }
 .hlegend i { width: 10px; }
+.exam { border-radius: 14px; padding: 14px 16px; color: #fff; background: linear-gradient(135deg, var(--study), var(--beauty)); display: flex; flex-direction: column; gap: 4px; }
+.exam .label, .exam .diff { color: rgba(255,255,255,.9) !important; }
+.exam .diff b { color: #fff; }
+.exam .cd { display: flex; align-items: baseline; gap: 4px; }
+.exam .cd b { font-family: var(--f-num); font-size: 48px; font-weight: 600; line-height: 1; font-variant-numeric: lining-nums; }
+.exam .cd span { font-size: 18px; font-weight: 700; }
+.exam .cd small { font-size: 13px; opacity: .85; margin-left: 4px; }
+.sgoal { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border-radius: 12px; border: 2px dashed var(--c); font-size: 14px; }
+.sgoal b { color: var(--c); }
+.sgoal .accbar i { background: var(--c); }
+.sgoal.ok { border-style: solid; background: color-mix(in srgb, var(--c) 10%, var(--paper)); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -517,6 +528,7 @@ body { background-color: var(--bg) !important;
 
   <section class="panel" aria-label="勉強の積み上げ">
     <div class="phead"><h2>勉強の積み上げ</h2><span class="label num" id="stTotal"></span></div>
+    <div class="exam" id="exam"></div>
     <div class="sdash" id="sdash"></div>
     <div class="mile" id="mile"></div>
     <div><div class="row" style="justify-content:space-between"><span class="label">この12週間の勉強カレンダー</span><span class="hlegend">少 <i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> 多</span></div>
@@ -575,6 +587,8 @@ body { background-color: var(--bg) !important;
       <div class="label" style="margin-top:6px">科目ごとの動画・教材のリンク（https:// から貼りつけ）</div>
       <div id="subjLinks" style="display:flex;flex-direction:column;gap:8px"></div>
       <label for="snsTypes" style="align-items:flex-start">SNS投稿の種類（1行に1つ）<textarea id="snsTypes" rows="4" style="width:180px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)"></textarea></label>
+      <label for="examDate">試験日<input id="examDate" type="date" style="width:160px"></label>
+      <label for="examHours">試験までの目標勉強時間（合計・時間）<input id="examHours" type="number" min="1" max="10000" step="10" inputmode="numeric" placeholder="例 500"></label>
       <div class="label" style="margin-top:6px">ZUMBAに行く曜日</div>
       <div class="row" id="zumbaDays"></div>
       <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="30"></label>
@@ -649,8 +663,9 @@ body { background-color: var(--bg) !important;
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
-    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin > 0; });
-    if (add > 0 && !was) afterCheck(k, HABITS[0], before);
+    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin >= studyGoal(); });
+    if (add > 0 && !was && isDone(day(k), "study")) afterCheck(k, HABITS[0], before);
+    else if (add > 0 && !was) setTimeout(() => { const r = studyGoal() - (day(k).studyMin || 0); if (r > 0) toast(`勉強クリアまで あと${hm(r)}！`); }, 900);
   }
   const SNS_DEFAULT = ["Instagram 投稿", "ストーリーズ", "リール", "X", "note", "LINEスタンプ"];
   const snsTypes = () => Array.isArray(state.settings.snsTypes) ? state.settings.snsTypes : SNS_DEFAULT;
@@ -814,7 +829,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -829,7 +844,11 @@ body { background-color: var(--bg) !important;
     const d = JSON.parse(JSON.stringify(day(k)));
     fn(d); state.days[k] = d; queueSave(k); lsSave(); render();
   }
-  const isDone = (d, h) => h === "weight" ? typeof d.weight === "number" : !!(d.done && d.done[h]);
+  // study counts only when the day's goal is reached (old toggle-only days still count)
+  const studyGoal = () => state.settings.studyGoal || 30;
+  const isDone = (d, h) => h === "weight" ? typeof d.weight === "number"
+    : h === "study" ? ((d.studyMin || 0) >= studyGoal() || (!(d.studyMin > 0) && !!(d.done && d.done.study)))
+    : !!(d.done && d.done[h]);
   const countDone = d => HABITS.filter(h => isDone(d, h.id)).length;
   const habitsFor = k => HABITS.filter(h => !h.since || k >= h.since);
   const isPerfect = k => habitsFor(k).every(h => isDone(day(k), h.id));
@@ -1003,9 +1022,10 @@ body { background-color: var(--bg) !important;
     const t = todayKey(), mins = k => (day(k).studyMin || 0);
     const total = Object.keys(state.days).reduce((a, k) => a + mins(k), 0);
     // study streak: consecutive days with time logged (today may still be empty)
-    let k = mins(t) > 0 ? t : addDays(t, -1), streak = 0;
-    while (mins(k) > 0 && streak < 3650) { streak++; k = addDays(k, -1); }
-    const studied = Object.keys(state.days).filter(x => mins(x) > 0).sort();
+    const goalMet = x => mins(x) >= studyGoal();
+    let k = goalMet(t) ? t : addDays(t, -1), streak = 0;
+    while (goalMet(k) && streak < 3650) { streak++; k = addDays(k, -1); }
+    const studied = Object.keys(state.days).filter(goalMet).sort();
     let best = 0, run = 0, prev = null;
     studied.forEach(x => { run = prev && addDays(prev, 1) === x ? run + 1 : 1; best = Math.max(best, run); prev = x; });
     // compare with last week up to the same weekday, so mid-week numbers are fair
@@ -1014,8 +1034,20 @@ body { background-color: var(--bg) !important;
     const diff = lastW ? Math.round((thisW - lastW) / lastW * 100) : null;
     const bestDay = studied.reduce((b, x) => mins(x) > (b ? mins(b) : 0) ? x : b, null);
     const goal = state.settings.studyGoal || 30, today = mins(t);
+    // exam countdown
+    const exam = state.settings.examDate || "2027-08-03", left = Math.round((parseKey(exam) - parseKey(t)) / 86400000);
+    const pace = Array.from({ length: 28 }, (_, j) => mins(addDays(t, -j))).reduce((a, b) => a + b, 0) / 28;
+    const target = Number(state.settings.examHours) || 0, ed = parseKey(exam);
+    let plan = "";
+    if (left > 0 && target) { const need = Math.max(0, target * 60 - total) / left;
+      plan = need <= 0 ? "目標時間はもう達成！あとは仕上げるだけ" : `目標 ${target}時間まで、1日あたり <b>${hm(need)}</b>${pace >= need ? "（今のペースで届きます ✨）" : `（今のペースは1日 ${hm(pace)}）`}`; }
+    else if (left > 0) plan = pace > 0 ? `今のペース（1日 ${hm(pace)}）だと、試験日までに合計 <b>${Math.round((total + pace * left) / 60)}時間</b>` : "勉強時間を入れると、試験日までの見込みが出ます";
+    $("exam").innerHTML = left > 0
+      ? `<span class="label">試験（${ed.getFullYear()}年${ed.getMonth() + 1}月${ed.getDate()}日）まで</span><div class="cd"><b class="num">${left}</b><span>日</span><small>（約${Math.floor(left / 7)}週）</small></div><div class="diff">${plan}</div>`
+      : left === 0 ? `<div class="cd"><b>今日が試験日</b></div><div class="diff">ここまでの積み上げは ${hm(total)}。自信をもって！</div>`
+      : `<div class="diff">試験日を設定すると、カウントダウンが出ます。</div>`;
     $("sdash").innerHTML = `
-      <div class="tile"><span class="label">勉強の連続</span><b class="num">${streak}<small>日</small></b><span class="diff">最長 ${best}日</span></div>
+      <div class="tile"><span class="label">目標クリアの連続</span><b class="num">${streak}<small>日</small></b><span class="diff">最長 ${best}日</span></div>
       <div class="tile"><span class="label">今週</span><b class="num">${hm(thisW)}</b><span class="diff ${diff != null && diff >= 0 ? "up" : ""}">${diff == null ? "先週の記録なし" : diff >= 0 ? `先週の同じ曜日より +${diff}%` : `先週のこの時点 ${hm(lastW)}`}</span></div>
       <div class="tile"><span class="label">今日</span><b class="num">${hm(today)}</b><div class="accbar"><i style="width:${Math.min(100, Math.round(today / goal * 100))}%;background:var(--study)"></i></div><span class="diff">${today >= goal ? "目標クリア！" : `目標まで ${hm(goal - today)}`}</span></div>
       <div class="tile"><span class="label">いちばん頑張った日</span><b class="num">${bestDay ? hm(mins(bestDay)) : "—"}</b><span class="diff">${bestDay ? `${parseKey(bestDay).getMonth() + 1}/${parseKey(bestDay).getDate()}` : "これから"}</span></div>`;
@@ -1076,6 +1108,8 @@ body { background-color: var(--bg) !important;
           <div class="row"><button class="chip" data-add="15">+15分</button><button class="chip" data-add="30">+30分</button><button class="chip" data-add="60">+1時間</button>
           <button class="chip primary" data-timer>${running ? `止める <span class="timer" id="timerText" style="color:inherit">25:00</span>` : "25分タイマー"}</button>
           ${subjMin(d, sel) ? '<button class="chip" data-add="0">取り消し</button>' : ""}</div>
+          <div class="sgoal ${(d.studyMin || 0) >= goal ? "ok" : ""}"><div class="row" style="justify-content:space-between"><b>${(d.studyMin || 0) >= goal ? "今日の目標クリア！" : `勉強クリアまで あと ${hm(goal - (d.studyMin || 0))}`}</b><span class="num">${hm(d.studyMin || 0)} / ${hm(goal)}</span></div>
+            <div class="accbar"><i style="width:${Math.min(100, Math.round((d.studyMin || 0) / goal * 100))}%"></i></div></div>
           <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${hm(d.studyMin || 0)}</b> / 目標 ${goal}分　・　積み上げ ${names.map((n, i) => `${n} ${hm(totals[i])}`).join("・")}</div>`;
       }
       if (h.id === "exercise") {
@@ -1182,6 +1216,8 @@ body { background-color: var(--bg) !important;
     SUBJ_IDX.forEach(i => { $("slabel-" + i).textContent = subjects()[i]; const el = $("slink-" + i); if (document.activeElement !== el) el.value = subjLinkRaw(i) || ""; });
     SUBJ_IDX.forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
     $("zumbaDays").innerHTML = WD.map((w, i) => `<button class="chip ${zumbaDays().includes(i) ? "primary" : ""}" style="--c: var(--exercise)" data-zd="${i}" aria-pressed="${zumbaDays().includes(i)}">${w}</button>`).join("");
+    const ex = $("examDate"); if (document.activeElement !== ex) ex.value = state.settings.examDate || "2027-08-03";
+    const eh = $("examHours"); if (document.activeElement !== eh) eh.value = state.settings.examHours ?? "";
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
     if (!$("plans").childElementCount) $("plans").innerHTML = HABITS.map(h => `<label class="plan" for="plan-${h.id}">${h.name.replace(/（.*）/, "")}<input id="plan-${h.id}" data-plan="${h.id}" type="text" maxlength="30" placeholder="${PLAN_DEFAULT[h.id]}"></label>`).join("");
     HABITS.forEach(h => { const el = $("plan-" + h.id); if (document.activeElement !== el) el.value = (state.settings.plans || {})[h.id] || ""; });
@@ -1323,6 +1359,9 @@ body { background-color: var(--bg) !important;
   settingInput("target", "targetWeight", 20, 300);
   settingInput("studyGoal", "studyGoal", 5, 600);
   settingInput("weekGoal", "weekGoal", 1, 7);
+  settingInput("examHours", "examHours", 1, 10000);
+  $("examDate").addEventListener("change", e => { if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
+    state.settings = { ...state.settings, examDate: e.target.value }; queueSave("settings"); lsSave(); render(); toast("試験日を保存しました"); });
   $("zumbaDays").addEventListener("click", e => { const b = e.target.closest("[data-zd]"); if (!b) return; const i = Number(b.dataset.zd);
     const cur = zumbaDays(), next = cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i].sort();
     state.settings = { ...state.settings, zumbaDays: next }; queueSave("settings"); lsSave(); render(); toast("ZUMBAの曜日を保存しました"); });
