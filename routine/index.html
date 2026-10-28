@@ -448,6 +448,24 @@ body { background-color: var(--bg) !important;
 .keybtn[aria-expanded="true"] { border-color: var(--c); }
 .keybox { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; }
 .keybox input { flex: 1; min-width: 0; font-family: var(--f-body); padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.sdash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.tile { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; background: var(--paper); }
+.tile b { font-family: var(--f-num); font-size: 26px; font-weight: 600; color: var(--study); line-height: 1.2; font-variant-numeric: lining-nums tabular-nums; }
+.tile b small { font-size: 14px; margin-left: 2px; }
+.tile .up { color: var(--stretch); font-weight: 700; }
+.mile { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 12px; background: color-mix(in srgb, var(--gold) 12%, var(--paper)); }
+.mile b { font-size: 15px; }
+.milebar { height: 12px; border-radius: 6px; background: color-mix(in srgb, var(--gold) 20%, var(--paper)); overflow: hidden; }
+.milebar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--gold), var(--exercise)); transition: width .6s; }
+.heat { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(7, auto); gap: 3px; margin-top: 6px; }
+.heat i, .hlegend i { display: block; aspect-ratio: 1; border-radius: 3px; background: var(--soft); }
+.heat .l1, .hlegend .l1 { background: color-mix(in srgb, var(--study) 28%, var(--paper)); }
+.heat .l2, .hlegend .l2 { background: color-mix(in srgb, var(--study) 52%, var(--paper)); }
+.heat .lf { background: transparent; }
+.heat .l3, .hlegend .l3 { background: color-mix(in srgb, var(--study) 76%, var(--paper)); }
+.heat .l4, .hlegend .l4 { background: var(--study); }
+.hlegend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--muted); }
+.hlegend i { width: 10px; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -499,7 +517,12 @@ body { background-color: var(--bg) !important;
 
   <section class="panel" aria-label="勉強の積み上げ">
     <div class="phead"><h2>勉強の積み上げ</h2><span class="label num" id="stTotal"></span></div>
+    <div class="sdash" id="sdash"></div>
+    <div class="mile" id="mile"></div>
+    <div><div class="row" style="justify-content:space-between"><span class="label">この12週間の勉強カレンダー</span><span class="hlegend">少 <i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> 多</span></div>
+      <div class="heat" id="heat"></div></div>
     <div class="acc" id="acc"></div>
+    <div class="label">直近14日（科目ごと）</div>
     <div class="chart" id="studyChart"></div>
   </section>
 
@@ -953,6 +976,7 @@ body { background-color: var(--bg) !important;
       <div class="btnrow"><button class="btn main" data-goto="${y}">きのうの分をつける</button>${left ? `<button class="btn" data-restday="${y}">お休みチケットを使う</button>` : ""}</div>`;
   }
   function renderStudy() {
+    renderStudyDash();
     const names = subjects(), t = todayKey(), wk = weekKeys(t), mon = t.slice(0, 7);
     const sum = (i, pred) => Object.entries(state.days).reduce((a, [k, x]) => a + (pred(k) ? subjMin(x, i) : 0), 0);
     const tot = SUBJ_IDX.map(i => sum(i, () => true)), all = tot.reduce((a, b) => a + b, 0) || 1;
@@ -973,6 +997,41 @@ body { background-color: var(--bg) !important;
       v.forEach((m, i) => { if (!m) return; g += `<rect x="${x.toFixed(1)}" y="${y(acc + m).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(acc) - y(acc + m)).toFixed(1)}" rx="2" fill="var(${SUBJ_COLOR[i]})"/>`; acc += m; });
       if (j % 2 === 1 || j === 13) { const d = parseKey(ks[j]); g += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${d.getMonth() + 1}/${d.getDate()}</text>`; } });
     $("studyChart").innerHTML = g + "</svg>";
+  }
+  const MILES = [10, 30, 50, 100, 200, 300, 500, 700, 1000, 1500, 2000];
+  function renderStudyDash() {
+    const t = todayKey(), mins = k => (day(k).studyMin || 0);
+    const total = Object.keys(state.days).reduce((a, k) => a + mins(k), 0);
+    // study streak: consecutive days with time logged (today may still be empty)
+    let k = mins(t) > 0 ? t : addDays(t, -1), streak = 0;
+    while (mins(k) > 0 && streak < 3650) { streak++; k = addDays(k, -1); }
+    const studied = Object.keys(state.days).filter(x => mins(x) > 0).sort();
+    let best = 0, run = 0, prev = null;
+    studied.forEach(x => { run = prev && addDays(prev, 1) === x ? run + 1 : 1; best = Math.max(best, run); prev = x; });
+    // compare with last week up to the same weekday, so mid-week numbers are fair
+    const nDays = (parseKey(t).getDay() + 6) % 7 + 1;
+    const thisW = weekKeys(t).reduce((a, x) => a + mins(x), 0), lastW = weekKeys(addDays(t, -7)).slice(0, nDays).reduce((a, x) => a + mins(x), 0);
+    const diff = lastW ? Math.round((thisW - lastW) / lastW * 100) : null;
+    const bestDay = studied.reduce((b, x) => mins(x) > (b ? mins(b) : 0) ? x : b, null);
+    const goal = state.settings.studyGoal || 30, today = mins(t);
+    $("sdash").innerHTML = `
+      <div class="tile"><span class="label">勉強の連続</span><b class="num">${streak}<small>日</small></b><span class="diff">最長 ${best}日</span></div>
+      <div class="tile"><span class="label">今週</span><b class="num">${hm(thisW)}</b><span class="diff ${diff != null && diff >= 0 ? "up" : ""}">${diff == null ? "先週の記録なし" : diff >= 0 ? `先週の同じ曜日より +${diff}%` : `先週のこの時点 ${hm(lastW)}`}</span></div>
+      <div class="tile"><span class="label">今日</span><b class="num">${hm(today)}</b><div class="accbar"><i style="width:${Math.min(100, Math.round(today / goal * 100))}%;background:var(--study)"></i></div><span class="diff">${today >= goal ? "目標クリア！" : `目標まで ${hm(goal - today)}`}</span></div>
+      <div class="tile"><span class="label">いちばん頑張った日</span><b class="num">${bestDay ? hm(mins(bestDay)) : "—"}</b><span class="diff">${bestDay ? `${parseKey(bestDay).getMonth() + 1}/${parseKey(bestDay).getDate()}` : "これから"}</span></div>`;
+    const h = total / 60, next = MILES.find(m => m > h) || Math.ceil(h / 500 + 1) * 500, prevM = [0, ...MILES].filter(m => m <= h).pop() || 0;
+    const pct = Math.round((h - prevM) / (next - prevM) * 100);
+    $("mile").innerHTML = `<div class="row" style="justify-content:space-between"><span><b class="num">${h.toFixed(1)}時間</b> 積み上げ</span><span class="diff">次の目標 <b>${next}時間</b> まで あと${hm(next * 60 - total)}</span></div>
+      <div class="milebar"><i style="width:${pct}%"></i></div>
+      <div class="diff">${prevM ? `${prevM}時間たっせい済み 🎉 ` : ""}この調子なら、あと${(() => { const per = thisW / Math.max(1, (parseKey(t).getDay() + 6) % 7 + 1); return per > 0 ? Math.ceil((next * 60 - total) / per) + "日" : "…勉強時間を入れると予想が出ます"; })()}${thisW ? "で届きます" : ""}</div>`;
+    // 12-week heatmap, Monday-first columns
+    const start = addDays(weekStart(t), -77);
+    let cells = "";
+    for (let w = 0; w < 12; w++) for (let d = 0; d < 7; d++) {
+      const kk = addDays(start, w * 7 + d), m = mins(kk), lv = kk > t ? "f" : m === 0 ? 0 : m < 30 ? 1 : m < 60 ? 2 : m < 120 ? 3 : 4;
+      cells += `<i class="l${lv}" style="grid-column:${w + 1};grid-row:${d + 1}" title="${parseKey(kk).getMonth() + 1}/${parseKey(kk).getDate()} ${hm(m)}"></i>`;
+    }
+    $("heat").innerHTML = cells;
   }
   function renderWeek() {
     const t = todayKey(), ks = weekKeys(t), goal = state.settings.weekGoal || 5;
