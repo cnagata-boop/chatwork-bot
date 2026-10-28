@@ -480,6 +480,22 @@ body { background-color: var(--bg) !important;
 .exam .phase { order: 3; font-size: 12px; background: rgba(255,255,255,.18); border-radius: 8px; padding: 6px 8px; line-height: 1.5; }
 .exam .phase b { display: block; font-size: 13px; }
 .exam .diff { order: 2; }
+.pearls { display: flex; gap: 6px; flex-wrap: wrap; }
+.pl { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--c) 45%, var(--line));
+  background: linear-gradient(to top, color-mix(in srgb, var(--c) 35%, var(--paper)) var(--f), var(--paper) var(--f)); }
+.pl.full { border-color: #e9dcef; background: radial-gradient(circle at 35% 30%, #fff 0 18%, #f7eef3 45%, #dccbe9 100%); box-shadow: 0 2px 6px rgba(150, 110, 180, .35); }
+.nextr { display: flex; gap: 10px; align-items: center; }
+.nextr .gift { font-size: 30px; line-height: 1; }
+.nextr b { display: block; font-size: 16px; }
+.road { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
+.rw { flex: none; width: 104px; scroll-snap-align: start; border: 1px dashed var(--line); background: var(--paper); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 3px; text-align: left; font-size: 12px; color: var(--muted); }
+.rw .rh { font-size: 15px; font-weight: 600; color: var(--ink); }
+.rw .rt { line-height: 1.4; min-height: 2.8em; }
+.rw .rs { font-size: 11px; font-weight: 700; }
+.rw.got { border: 2px solid var(--gold); color: var(--ink); background: color-mix(in srgb, var(--gold) 10%, var(--paper)); }
+.rw.got .rs { color: var(--gold); }
+.rw.took { opacity: .7; border-style: solid; }
+.rw:disabled { cursor: default; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -587,6 +603,7 @@ body { background-color: var(--bg) !important;
       <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="簿記論"></label>
       <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="財表"></label>
       <label for="subj-3">科目4<input id="subj-3" data-sname="3" type="text" maxlength="12" placeholder="大学院の課題"></label>
+      <label for="rewardText" style="align-items:flex-start">ご褒美リスト（「時間 ご褒美」を1行に1つ）<textarea id="rewardText" rows="6" style="width:200px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)"></textarea></label>
       <div class="label" style="margin-top:6px">科目ごとの目標時間（試験まで・時間）</div>
       <div id="subjTargets" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="label" style="margin-top:6px">科目ごとの動画・教材のリンク（https:// から貼りつけ）</div>
@@ -669,7 +686,14 @@ body { background-color: var(--bg) !important;
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
+    const pBefore = Math.floor((day(k).studyMin || 0) / 30), hBefore = Object.values(state.days).reduce((a, x) => a + (x.studyMin || 0), 0) / 60;
     editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin >= goalForKey(k); });
+    if (add > 0) {
+      const hAfter = Object.values(state.days).reduce((a, x) => a + (x.studyMin || 0), 0) / 60, unlocked = rewards().filter(r => r.h > hBefore && r.h <= hAfter);
+      const gained = Math.floor((day(k).studyMin || 0) / 30) - pBefore;
+      if (unlocked.length) { setTimeout(() => { toast(`🎁 ご褒美解放！「${unlocked[unlocked.length - 1].text}」`); celebrate(160); }, 1300); }
+      else if (gained > 0 && !(!was && isDone(day(k), "study"))) toast(`真珠を${gained}粒ゲット ✨`);
+    }
     if (add > 0 && !was && isDone(day(k), "study")) afterCheck(k, HABITS[0], before);
     else if (add > 0 && !was) setTimeout(() => { const r = goalForKey(k) - (day(k).studyMin || 0); if (r > 0) toast(`勉強クリアまで あと${hm(r)}！`); }, 900);
   }
@@ -835,7 +859,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { studyGoalHoliday: settings.studyGoalHoliday ?? null, subjTarget: settings.subjTarget || null, examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { rewardText: settings.rewardText ?? undefined, claimed: settings.claimed || {}, studyGoalHoliday: settings.studyGoalHoliday ?? null, subjTarget: settings.subjTarget || null, examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -1048,7 +1072,8 @@ body { background-color: var(--bg) !important;
       if (j % 2 === 1 || j === 13) { const d = parseKey(ks[j]); g += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${d.getMonth() + 1}/${d.getDate()}</text>`; } });
     $("studyChart").innerHTML = g + "</svg>";
   }
-  const MILES = [10, 30, 50, 100, 200, 300, 500, 700, 1000, 1500, 2000];
+  const REWARD_DEFAULT = "10 好きなスイーツを買う\n25 新しい文房具\n50 カフェでゆっくり\n100 ほしかったコスメ\n150 ちょっといいランチ\n200 ディズニーグッズ\n300 映画かおでかけ\n400 ご褒美ショッピング\n500 ディズニーに行く日を決める\n700 エステかマッサージ\n900 合格前祝い";
+  const rewards = () => (state.settings.rewardText ?? REWARD_DEFAULT).split("\n").map(l => { const m = l.trim().match(/^(\d+(?:\.\d+)?)\s*(?:h|時間)?\s+(.+)$/); return m ? { h: Number(m[1]), text: m[2] } : null; }).filter(Boolean).sort((a, b) => a.h - b.h);
   const examKey = () => state.settings.examDate || "2027-08-03";
   const examLeft = () => Math.round((parseKey(examKey()) - parseKey(todayKey())) / 86400000);
   function renderStudyDash() {
@@ -1085,11 +1110,15 @@ body { background-color: var(--bg) !important;
       <div class="tile"><span class="label">今週</span><b class="num">${hm(thisW)}</b><span class="diff ${diff != null && diff >= 0 ? "up" : ""}">${diff == null ? "先週の記録なし" : diff >= 0 ? `先週の同じ曜日より +${diff}%` : `先週のこの時点 ${hm(lastW)}`}</span></div>
       <div class="tile"><span class="label">今日</span><b class="num">${hm(today)}</b><div class="accbar"><i style="width:${Math.min(100, Math.round(today / goal * 100))}%;background:var(--study)"></i></div><span class="diff">${today >= goal ? "目標クリア！" : `目標まで ${hm(goal - today)}`}</span></div>
       <div class="tile"><span class="label">いちばん頑張った日</span><b class="num">${bestDay ? hm(mins(bestDay)) : "—"}</b><span class="diff">${bestDay ? `${parseKey(bestDay).getMonth() + 1}/${parseKey(bestDay).getDate()}` : "これから"}</span></div>`;
-    const h = total / 60, next = MILES.find(m => m > h) || Math.ceil(h / 500 + 1) * 500, prevM = [0, ...MILES].filter(m => m <= h).pop() || 0;
-    const pct = Math.round((h - prevM) / (next - prevM) * 100);
-    $("mile").innerHTML = `<div class="row" style="justify-content:space-between"><span><b class="num">${h.toFixed(1)}時間</b> 積み上げ</span><span class="diff">次の目標 <b>${next}時間</b> まで あと${hm(next * 60 - total)}</span></div>
-      <div class="milebar"><i style="width:${pct}%"></i></div>
-      <div class="diff">${prevM ? `${prevM}時間たっせい済み 🎉 ` : ""}この調子なら、あと${(() => { const per = thisW / Math.max(1, (parseKey(t).getDay() + 6) % 7 + 1); return per > 0 ? Math.ceil((next * 60 - total) / per) + "日" : "…勉強時間を入れると予想が出ます"; })()}${thisW ? "で届きます" : ""}</div>`;
+    // ご褒美ロード: rewards the user picks, unlocked by total hours
+    const h = total / 60, rw = rewards(), nextR = rw.find(r => r.h > h), prevH = [0, ...rw.map(r => r.h)].filter(x => x <= h).pop() || 0;
+    const pct = nextR ? Math.round((h - prevH) / (nextR.h - prevH) * 100) : 100, claimed = state.settings.claimed || {};
+    const per = Array.from({ length: 14 }, (_, j) => mins(addDays(t, -j))).reduce((a, b) => a + b, 0) / 14;
+    $("mile").innerHTML = `<div class="row" style="justify-content:space-between"><span class="label">ご褒美ロード</span><span><b class="num">${h.toFixed(1)}</b> 時間</span></div>
+      ${nextR ? `<div class="nextr"><span class="gift">🎁</span><div><b>${esc(nextR.text)}</b><span class="diff">${nextR.h}時間で解放・あと <b>${hm(nextR.h * 60 - total)}</b>${per > 0 ? `（このペースで約${Math.ceil((nextR.h * 60 - total) / per)}日）` : ""}</span></div></div>
+      <div class="milebar"><i style="width:${pct}%"></i></div>` : `<div class="nextr"><span class="gift">👑</span><div><b>全部のご褒美を解放しました！</b></div></div>`}
+      <div class="road">${rw.map(r => { const got = h >= r.h, took = !!claimed[r.h];
+        return `<button class="rw ${got ? "got" : ""} ${took ? "took" : ""}" data-claim="${r.h}" ${got ? "" : "disabled"}><span class="rh num">${r.h}h</span><span class="rt">${esc(r.text)}</span><span class="rs">${took ? "受け取った ✓" : got ? "受け取る" : "🔒"}</span></button>`; }).join("")}</div>`;
     // 12-week heatmap, Monday-first columns
     const start = addDays(weekStart(t), -77);
     let cells = "";
@@ -1143,7 +1172,9 @@ body { background-color: var(--bg) !important;
           <button class="chip primary" data-timer>${running ? `止める <span class="timer" id="timerText" style="color:inherit">25:00</span>` : "25分タイマー"}</button>
           ${subjMin(d, sel) ? '<button class="chip" data-add="0">取り消し</button>' : ""}</div>
           <div class="sgoal ${(d.studyMin || 0) >= goal ? "ok" : ""}"><div class="row" style="justify-content:space-between"><b>${(d.studyMin || 0) >= goal ? "今日の目標クリア！" : `勉強クリアまで あと ${hm(goal - (d.studyMin || 0))}`}</b><span class="num">${hm(d.studyMin || 0)} / ${hm(goal)}</span></div>
-            <div class="accbar"><i style="width:${Math.min(100, Math.round((d.studyMin || 0) / goal * 100))}%"></i></div></div>
+            <div class="pearls" aria-label="30分ごとに真珠が1粒">${Array.from({ length: Math.ceil(goal / 30) }, (_, j) => { const f = Math.max(0, Math.min(1, ((d.studyMin || 0) - j * 30) / 30));
+              return `<span class="pl ${f >= 1 ? "full" : ""}" style="--f:${Math.round(f * 100)}%"></span>`; }).join("")}</div>
+            <div class="diff">30分で真珠1粒。${(d.studyMin || 0) >= goal ? "今日の真珠ネックレス完成！" : `あと${Math.ceil(goal / 30) - Math.floor((d.studyMin || 0) / 30)}粒で完成`}</div></div>
           <div class="diff">今日の合計 <b class="num" style="color:var(--c)">${hm(d.studyMin || 0)}</b> / 目標 ${goal}分　・　積み上げ ${names.map((n, i) => `${n} ${hm(totals[i])}`).join("・")}</div>`;
       }
       if (h.id === "exercise") {
@@ -1246,6 +1277,7 @@ body { background-color: var(--bg) !important;
     if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
     const st = $("snsTypes"); if (document.activeElement !== st) st.value = snsTypes().join("\n");
+    const rt = $("rewardText"); if (document.activeElement !== rt) rt.value = state.settings.rewardText ?? REWARD_DEFAULT;
     if (!$("subjTargets").childElementCount) $("subjTargets").innerHTML = SUBJ_IDX.map(i => `<label for="stg-${i}"><span id="stgl-${i}"></span><input id="stg-${i}" data-stg="${i}" type="number" min="0" max="3000" step="10" inputmode="numeric"></label>`).join("");
     SUBJ_IDX.forEach(i => { $("stgl-" + i).textContent = subjects()[i]; const el = $("stg-" + i); if (document.activeElement !== el) el.value = subjTarget(i) || ""; });
     if (!$("subjLinks").childElementCount) $("subjLinks").innerHTML = SUBJ_IDX.map(i => `<label for="slink-${i}"><span id="slabel-${i}"></span><input id="slink-${i}" data-slink="${i}" type="url" inputmode="url" placeholder="https://www.youtube.com/..." style="width:200px;font-family:var(--f-body)"></label>`).join("");
@@ -1406,6 +1438,10 @@ body { background-color: var(--bg) !important;
   $("snsTypes").addEventListener("change", e => {
     const arr = [...new Set(e.target.value.split("\n").map(x => x.trim()).filter(Boolean))].slice(0, 10);
     state.settings = { ...state.settings, snsTypes: arr }; queueSave("settings"); lsSave(); render(); toast("投稿の種類を保存しました"); });
+  $("mile").addEventListener("click", e => { const b = e.target.closest("[data-claim]"); if (!b || b.disabled) return; const h = b.dataset.claim;
+    const c = { ...(state.settings.claimed || {}) }; if (c[h]) delete c[h]; else c[h] = true;
+    state.settings = { ...state.settings, claimed: c }; queueSave("settings"); lsSave(); render(); if (c[h]) { toast("ご褒美、楽しんでね！"); celebrate(80); } });
+  $("rewardText").addEventListener("change", e => { state.settings = { ...state.settings, rewardText: e.target.value }; queueSave("settings"); lsSave(); render(); toast("ご褒美リストを保存しました"); });
   $("subjTargets").addEventListener("change", e => { const i = e.target.dataset.stg; if (i == null) return;
     const arr = SUBJ_IDX.map(j => subjTarget(j)); arr[i] = Math.max(0, Math.min(3000, Number(e.target.value) || 0));
     state.settings = { ...state.settings, subjTarget: arr }; queueSave("settings"); lsSave(); render(); toast("目標時間を保存しました"); });
