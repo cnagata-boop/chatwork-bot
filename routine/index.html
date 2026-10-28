@@ -477,6 +477,9 @@ body { background-color: var(--bg) !important;
 .sgoal b { color: var(--c); }
 .sgoal .accbar i { background: var(--c); }
 .sgoal.ok { border-style: solid; background: color-mix(in srgb, var(--c) 10%, var(--paper)); }
+.exam .phase { order: 3; font-size: 12px; background: rgba(255,255,255,.18); border-radius: 8px; padding: 6px 8px; line-height: 1.5; }
+.exam .phase b { display: block; font-size: 13px; }
+.exam .diff { order: 2; }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -584,6 +587,8 @@ body { background-color: var(--bg) !important;
       <label for="subj-1">科目2<input id="subj-1" data-sname="1" type="text" maxlength="12" placeholder="簿記論"></label>
       <label for="subj-2">科目3<input id="subj-2" data-sname="2" type="text" maxlength="12" placeholder="財表"></label>
       <label for="subj-3">科目4<input id="subj-3" data-sname="3" type="text" maxlength="12" placeholder="大学院の課題"></label>
+      <div class="label" style="margin-top:6px">科目ごとの目標時間（試験まで・時間）</div>
+      <div id="subjTargets" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="label" style="margin-top:6px">科目ごとの動画・教材のリンク（https:// から貼りつけ）</div>
       <div id="subjLinks" style="display:flex;flex-direction:column;gap:8px"></div>
       <label for="snsTypes" style="align-items:flex-start">SNS投稿の種類（1行に1つ）<textarea id="snsTypes" rows="4" style="width:180px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)"></textarea></label>
@@ -591,7 +596,8 @@ body { background-color: var(--bg) !important;
       <label for="examHours">試験までの目標勉強時間（合計・時間）<input id="examHours" type="number" min="1" max="10000" step="10" inputmode="numeric" placeholder="例 500"></label>
       <div class="label" style="margin-top:6px">ZUMBAに行く曜日</div>
       <div class="row" id="zumbaDays"></div>
-      <label for="studyGoal">1日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="120"></label>
+      <label for="studyGoalHoliday">土日の勉強目標（分）<input id="studyGoalHoliday" type="number" step="10" inputmode="numeric" placeholder="空欄＝時期に合わせて自動"></label>
+      <label for="studyGoal">平日の勉強目標（分）<input id="studyGoal" type="number" step="5" inputmode="numeric" placeholder="空欄＝時期に合わせて自動"></label>
       <label for="weekGoal">週に何日チェックする？（1〜7日）<input id="weekGoal" type="number" step="1" inputmode="numeric" placeholder="5"></label>
       <div class="label" style="margin-top:6px">いつやる？（「〇〇したら、やる」と決めておくと続きやすくなります）</div>
       <div id="plans" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -663,9 +669,9 @@ body { background-color: var(--bg) !important;
   const subjMin = (d, i) => (d.studyBy && d.studyBy[i]) || 0;
   function addStudy(k, i, add) {
     const before = countDone(day(k)), was = isDone(day(k), "study");
-    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin >= studyGoal(); });
+    editDay(k, d => { d.studyBy = { ...(d.studyBy || {}) }; d.studyBy[i] = Math.max(0, subjMin(d, i) + add); d.studyMin = Math.max(0, (d.studyMin || 0) + add); d.done.study = d.studyMin >= goalForKey(k); });
     if (add > 0 && !was && isDone(day(k), "study")) afterCheck(k, HABITS[0], before);
-    else if (add > 0 && !was) setTimeout(() => { const r = studyGoal() - (day(k).studyMin || 0); if (r > 0) toast(`勉強クリアまで あと${hm(r)}！`); }, 900);
+    else if (add > 0 && !was) setTimeout(() => { const r = goalForKey(k) - (day(k).studyMin || 0); if (r > 0) toast(`勉強クリアまで あと${hm(r)}！`); }, 900);
   }
   const SNS_DEFAULT = ["Instagram 投稿", "ストーリーズ", "リール", "X", "note", "LINEスタンプ"];
   const snsTypes = () => Array.isArray(state.settings.snsTypes) ? state.settings.snsTypes : SNS_DEFAULT;
@@ -818,7 +824,7 @@ body { background-color: var(--bg) !important;
       for (const doc of snap.docs) {
         const v = doc.data(); if (!v) continue;
         if (doc.id === "settings") settings = v;
-        else if (v.kind === "day") days[doc.id] = { done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest, sticker: v.sticker || null, studyBy: v.studyBy || {}, sns: v.sns || {} };
+        else if (v.kind === "day") days[doc.id] = { date: doc.id, done: v.done || {}, weight: v.weight ?? null, studyMin: v.studyMin || 0, memo: v.memo || "", menu: v.menu || {}, easy: !!v.easy, rest: !!v.rest, sticker: v.sticker || null, studyBy: v.studyBy || {}, sns: v.sns || {} };
       }
       // keep edits that haven't been sent yet
       for (const k of Object.keys(store.pending)) if (k !== "settings" && state.days[k]) days[k] = state.days[k];
@@ -829,7 +835,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { studyGoalHoliday: settings.studyGoalHoliday ?? null, subjTarget: settings.subjTarget || null, examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -839,15 +845,37 @@ body { background-color: var(--bg) !important;
   }
 
   // ---------- day helpers ----------
-  function day(k) { return state.days[k] || { done: {}, weight: null, studyMin: 0, memo: "", menu: {} }; }
+  function day(k) { const d = state.days[k] || { done: {}, weight: null, studyMin: 0, memo: "", menu: {} }; if (!d.date) { try { d.date = k; } catch {} } return d; }
   function editDay(k, fn) {
-    const d = JSON.parse(JSON.stringify(day(k)));
+    const d = JSON.parse(JSON.stringify(day(k))); d.date = k;
     fn(d); state.days[k] = d; queueSave(k); lsSave(); render();
   }
   // study counts only when the day's goal is reached (old toggle-only days still count)
-  const studyGoal = () => state.settings.studyGoal || 120;
+  // weekly plan: weekdays 2h, weekends 5h; heavier subjects get more slots
+  const WEEK_PLAN = {
+    1: "簿記論（計算・個別問題）2時間",
+    2: "財表 計算1時間・理論1時間",
+    3: "国徴 理論の暗記2時間",
+    4: "財表 理論1時間・国徴 理論1時間",
+    5: "簿記論（総合問題）2時間",
+    6: "簿記論2時間・財表2時間・国徴1時間",
+    0: "答練・模試の復習3時間・国徴 理論2時間",
+  };
+  const PHASES = [
+    { to: "2027-01-31", wd: 120, we: 300, name: "基礎期", tip: "簿記論・財表の計算を固める時期。国徴は理論を1日1題ずつ覚え始めよう" },
+    { to: "2027-04-30", wd: 120, we: 360, name: "応用期", tip: "総合問題と答練で解くスピードを上げる。理論は覚えた題を回転させる" },
+    { to: "2027-06-30", wd: 150, we: 420, name: "直前期", tip: "全国模試で実力チェック。間違えたところだけを繰り返す" },
+    { to: "2027-08-31", wd: 180, we: 480, name: "総仕上げ", tip: "本試験の時間配分で演習。理論は全題を毎週ひと回し" },
+  ];
+  const SUBJ_TARGET_DEFAULT = [170, 380, 350, 0];
+  const subjTarget = i => Number((state.settings.subjTarget || [])[i] ?? SUBJ_TARGET_DEFAULT[i]) || 0;
+  const isHoliday = k => [0, 6].includes(parseKey(k).getDay());
+  const phaseOf = k => PHASES.find(x => k <= x.to) || PHASES[PHASES.length - 1];
+  // goals step up by phase unless the user set their own
+  const goalForKey = k => isHoliday(k) ? (state.settings.studyGoalHoliday || phaseOf(k).we) : (state.settings.studyGoal || phaseOf(k).wd);
+  const studyGoal = d => goalForKey(d && d.date ? d.date : todayKey());
   const isDone = (d, h) => h === "weight" ? typeof d.weight === "number"
-    : h === "study" ? ((d.studyMin || 0) >= studyGoal() || (!(d.studyMin > 0) && !!(d.done && d.done.study)))
+    : h === "study" ? ((d.studyMin || 0) >= studyGoal(d) || (!(d.studyMin > 0) && !!(d.done && d.done.study)))
     : !!(d.done && d.done[h]);
   const countDone = d => HABITS.filter(h => isDone(d, h.id)).length;
   const habitsFor = k => HABITS.filter(h => !h.since || k >= h.since);
@@ -899,6 +927,7 @@ body { background-color: var(--bg) !important;
   function menuFor(k, h) {
     if (!h.menu.length) return "";
     const d = day(k);
+    if (h.id === "study") { const p = WEEK_PLAN[parseKey(k).getDay()]; return d.easy ? `${p.split("・")[0].replace(/\s*\d.*$/, "")}を30分だけ` : p; }
     if (h.id === "exercise" && isZumba(k)) return d.easy ? "ZUMBAに行けたら花まる。無理なら軽く体を動かす" : "ZUMBAのレッスンに行く";
     if (d.easy && EASY[h.id]) return EASY[h.id];
     const idx = d.menu && typeof d.menu[h.id] === "number" ? d.menu[h.id] : hashStr(k + h.id) % h.menu.length;
@@ -1002,7 +1031,9 @@ body { background-color: var(--bg) !important;
     $("stTotal").textContent = `合計 ${hm(tot.reduce((a, b) => a + b, 0))}`;
     $("acc").innerHTML = names.map((n, i) => `<div class="accrow" style="--c: var(${SUBJ_COLOR[i]})">
       <div class="acchead"><b>${n}</b><span class="big num">${hm(tot[i])}</span></div>
-      <div class="accbar"><i style="width:${Math.round(tot[i] / all * 100)}%"></i></div>
+      ${subjTarget(i) ? `<div class="accbar"><i style="width:${Math.min(100, Math.round(tot[i] / (subjTarget(i) * 60) * 100))}%"></i></div>
+      <div class="diff">目標 ${subjTarget(i)}時間の <b>${Math.round(tot[i] / (subjTarget(i) * 60) * 100)}%</b>・あと ${hm(Math.max(0, subjTarget(i) * 60 - tot[i]))}${examLeft() > 0 && tot[i] < subjTarget(i) * 60 ? `（週 ${hm((subjTarget(i) * 60 - tot[i]) / (examLeft() / 7))} ペース）` : ""}</div>`
+        : `<div class="accbar"><i style="width:${Math.round(tot[i] / all * 100)}%"></i></div>`}
       <div class="diff">今日 ${hm(sum(i, k => k === t))}・今週 ${hm(sum(i, k => wk.includes(k)))}・今月 ${hm(sum(i, k => k.startsWith(mon)))}</div></div>`).join("");
     // last 14 days, stacked by subject
     const ks = Array.from({ length: 14 }, (_, j) => addDays(t, j - 13));
@@ -1018,11 +1049,13 @@ body { background-color: var(--bg) !important;
     $("studyChart").innerHTML = g + "</svg>";
   }
   const MILES = [10, 30, 50, 100, 200, 300, 500, 700, 1000, 1500, 2000];
+  const examKey = () => state.settings.examDate || "2027-08-03";
+  const examLeft = () => Math.round((parseKey(examKey()) - parseKey(todayKey())) / 86400000);
   function renderStudyDash() {
     const t = todayKey(), mins = k => (day(k).studyMin || 0);
     const total = Object.keys(state.days).reduce((a, k) => a + mins(k), 0);
     // study streak: consecutive days with time logged (today may still be empty)
-    const goalMet = x => mins(x) >= studyGoal();
+    const goalMet = x => mins(x) >= goalForKey(x);
     let k = goalMet(t) ? t : addDays(t, -1), streak = 0;
     while (goalMet(k) && streak < 3650) { streak++; k = addDays(k, -1); }
     const studied = Object.keys(state.days).filter(goalMet).sort();
@@ -1033,17 +1066,18 @@ body { background-color: var(--bg) !important;
     const thisW = weekKeys(t).reduce((a, x) => a + mins(x), 0), lastW = weekKeys(addDays(t, -7)).slice(0, nDays).reduce((a, x) => a + mins(x), 0);
     const diff = lastW ? Math.round((thisW - lastW) / lastW * 100) : null;
     const bestDay = studied.reduce((b, x) => mins(x) > (b ? mins(b) : 0) ? x : b, null);
-    const goal = state.settings.studyGoal || 120, today = mins(t);
+    const goal = goalForKey(t), today = mins(t);
     // exam countdown
     const exam = state.settings.examDate || "2027-08-03", left = Math.round((parseKey(exam) - parseKey(t)) / 86400000);
     const pace = Array.from({ length: 28 }, (_, j) => mins(addDays(t, -j))).reduce((a, b) => a + b, 0) / 28;
-    const target = Number(state.settings.examHours) || 0, ed = parseKey(exam);
+    const target = Number(state.settings.examHours) || SUBJ_IDX.reduce((a, i) => a + subjTarget(i), 0), ed = parseKey(exam);
+    const ph = phaseOf(t);
     let plan = "";
     if (left > 0 && target) { const need = Math.max(0, target * 60 - total) / left;
       plan = need <= 0 ? "目標時間はもう達成！あとは仕上げるだけ" : `目標 ${target}時間まで、1日あたり <b>${hm(need)}</b>${pace >= need ? "（今のペースで届きます ✨）" : `（今のペースは1日 ${hm(pace)}）`}`; }
     else if (left > 0) plan = pace > 0 ? `今のペース（1日 ${hm(pace)}）だと、試験日までに合計 <b>${Math.round((total + pace * left) / 60)}時間</b>` : "勉強時間を入れると、試験日までの見込みが出ます";
     $("exam").innerHTML = left > 0
-      ? `<span class="label">試験（${ed.getFullYear()}年${ed.getMonth() + 1}月${ed.getDate()}日）まで</span><div class="cd"><b class="num">${left}</b><span>日</span><small>（約${Math.floor(left / 7)}週）</small></div><div class="diff">${plan}</div>`
+      ? `<span class="label">試験（${ed.getFullYear()}年${ed.getMonth() + 1}月${ed.getDate()}日）まで</span><div class="phase"><b>いまは「${ph.name}」（平日${hm(goalForKey(isHoliday(t) ? addDays(t, -1 - (parseKey(t).getDay() === 0 ? 1 : 0)) : t))}・土日${hm(goalForKey(addDays(t, 6 - parseKey(t).getDay())))}）</b>${ph.tip}</div><div class="cd"><b class="num">${left}</b><span>日</span><small>（約${Math.floor(left / 7)}週）</small></div><div class="diff">${plan}</div>`
       : left === 0 ? `<div class="cd"><b>今日が試験日</b></div><div class="diff">ここまでの積み上げは ${hm(total)}。自信をもって！</div>`
       : `<div class="diff">試験日を設定すると、カウントダウンが出ます。</div>`;
     $("sdash").innerHTML = `
@@ -1084,13 +1118,13 @@ body { background-color: var(--bg) !important;
   }
   function renderHabits() {
     const k = state.selected, d = day(k);
-    const goal = state.settings.studyGoal || 120;
+    const goal = goalForKey(k);
     $("habits").innerHTML = HABITS.map(h => {
       const done = isDone(d, h.id);
       const st = streakFor(x => isDone(x, h.id));
       const zb = h.id === "exercise" && isZumba(k);
       let extra = `<div class="when">いつ：<b>${zb ? "ZUMBAのレッスンで" : planOf(h.id)}</b></div>`;
-      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${zb ? "今日はZUMBA" : d.easy ? "ゆるモード" : h.tag}</span>${menuFor(k, h)}</span>${d.easy || zb ? "" : `<button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button>`}</div>`;
+      if (h.menu.length) extra += `<div class="menu"><span><span class="tag">${h.id === "study" ? "今日の勉強プラン" : zb ? "今日はZUMBA" : d.easy ? "ゆるモード" : h.tag}</span>${menuFor(k, h)}</span>${d.easy || zb || h.id === "study" ? "" : `<button class="shuffle" data-shuffle="${h.id}" aria-label="${h.name}のメニューを変える">別のにする</button>`}</div>`;
       if (h.id === "study") {
         const running = !!timer.id;
         const names = subjects(), sel = state.subj || 0;
@@ -1212,10 +1246,13 @@ body { background-color: var(--bg) !important;
     if (document.activeElement !== tw) tw.value = state.settings.targetWeight ?? "";
     if (document.activeElement !== sg) sg.value = state.settings.studyGoal ?? "";
     const st = $("snsTypes"); if (document.activeElement !== st) st.value = snsTypes().join("\n");
+    if (!$("subjTargets").childElementCount) $("subjTargets").innerHTML = SUBJ_IDX.map(i => `<label for="stg-${i}"><span id="stgl-${i}"></span><input id="stg-${i}" data-stg="${i}" type="number" min="0" max="3000" step="10" inputmode="numeric"></label>`).join("");
+    SUBJ_IDX.forEach(i => { $("stgl-" + i).textContent = subjects()[i]; const el = $("stg-" + i); if (document.activeElement !== el) el.value = subjTarget(i) || ""; });
     if (!$("subjLinks").childElementCount) $("subjLinks").innerHTML = SUBJ_IDX.map(i => `<label for="slink-${i}"><span id="slabel-${i}"></span><input id="slink-${i}" data-slink="${i}" type="url" inputmode="url" placeholder="https://www.youtube.com/..." style="width:200px;font-family:var(--f-body)"></label>`).join("");
     SUBJ_IDX.forEach(i => { $("slabel-" + i).textContent = subjects()[i]; const el = $("slink-" + i); if (document.activeElement !== el) el.value = subjLinkRaw(i) || ""; });
     SUBJ_IDX.forEach(i => { const el = $("subj-" + i); if (document.activeElement !== el) el.value = (state.settings.subjects || [])[i] || ""; });
     $("zumbaDays").innerHTML = WD.map((w, i) => `<button class="chip ${zumbaDays().includes(i) ? "primary" : ""}" style="--c: var(--exercise)" data-zd="${i}" aria-pressed="${zumbaDays().includes(i)}">${w}</button>`).join("");
+    const sgh = $("studyGoalHoliday"); if (document.activeElement !== sgh) sgh.value = state.settings.studyGoalHoliday ?? "";
     const ex = $("examDate"); if (document.activeElement !== ex) ex.value = state.settings.examDate || "2027-08-03";
     const eh = $("examHours"); if (document.activeElement !== eh) eh.value = state.settings.examHours ?? "";
     const wg = $("weekGoal"); if (document.activeElement !== wg) wg.value = state.settings.weekGoal ?? "";
@@ -1358,6 +1395,7 @@ body { background-color: var(--bg) !important;
   }
   settingInput("target", "targetWeight", 20, 300);
   settingInput("studyGoal", "studyGoal", 5, 600);
+  settingInput("studyGoalHoliday", "studyGoalHoliday", 5, 900);
   settingInput("weekGoal", "weekGoal", 1, 7);
   settingInput("examHours", "examHours", 1, 10000);
   $("examDate").addEventListener("change", e => { if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
@@ -1368,6 +1406,9 @@ body { background-color: var(--bg) !important;
   $("snsTypes").addEventListener("change", e => {
     const arr = [...new Set(e.target.value.split("\n").map(x => x.trim()).filter(Boolean))].slice(0, 10);
     state.settings = { ...state.settings, snsTypes: arr }; queueSave("settings"); lsSave(); render(); toast("投稿の種類を保存しました"); });
+  $("subjTargets").addEventListener("change", e => { const i = e.target.dataset.stg; if (i == null) return;
+    const arr = SUBJ_IDX.map(j => subjTarget(j)); arr[i] = Math.max(0, Math.min(3000, Number(e.target.value) || 0));
+    state.settings = { ...state.settings, subjTarget: arr }; queueSave("settings"); lsSave(); render(); toast("目標時間を保存しました"); });
   $("subjLinks").addEventListener("change", e => { const i = e.target.dataset.slink; if (i == null) return;
     const v = e.target.value.trim();
     if (v && !/^https:\/\/\S+$/i.test(v)) { toast("https:// から始まるリンクを貼りつけてください"); return; }
