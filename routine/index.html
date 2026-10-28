@@ -496,6 +496,15 @@ body { background-color: var(--bg) !important;
 .rw.got .rs { color: var(--gold); }
 .rw.took { opacity: .7; border-style: solid; }
 .rw:disabled { cursor: default; }
+/* layout: everything on one page, or three tabs */
+.layoutsw { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.layoutsw .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tabs { display: none; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 11; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--line); }
+.tabs button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 9px 0; font-weight: 700; font-size: 14px; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+body.tabmode .tabs { display: flex; }
+body.tabmode:not(.tab-today) [data-tab="today"], body.tabmode:not(.tab-record) [data-tab="record"], body.tabmode:not(.tab-settings) [data-tab="settings"] { display: none !important; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 15; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -521,15 +530,18 @@ body { background-color: var(--bg) !important;
     </div>
   </header>
 
-  <nav class="datenav" aria-label="日付の切り替え">
+  <div class="layoutsw" role="group" aria-label="画面の見せ方"><span class="label">画面</span><button class="chip" data-layout="all">まとめて表示</button><button class="chip" data-layout="tabs">タブで分ける</button></div>
+  <nav class="tabs" id="tabs" aria-label="画面の切り替え"><button data-tabbtn="today">今日</button><button data-tabbtn="record">記録</button><button data-tabbtn="settings">設定</button></nav>
+
+  <nav data-tab="today" class="datenav" aria-label="日付の切り替え">
     <button class="iconbtn" id="prevDay" aria-label="前の日">‹</button>
     <div class="d"><span class="label" id="dayLabel">今日</span><b id="dateText"></b><br><button class="todaylink" id="goToday" hidden>今日に戻る</button></div>
     <button class="iconbtn" id="nextDay" aria-label="次の日">›</button>
   </nav>
 
-  <div id="nudge" hidden></div>
-  <div class="swipehint">左右にスワイプで日付を切り替え</div>
-  <section class="hero" aria-label="今日の達成状況">
+  <div data-tab="today" id="nudge" hidden></div>
+  <div data-tab="today" class="swipehint">左右にスワイプで日付を切り替え</div>
+  <section data-tab="today" class="hero" aria-label="今日の達成状況">
     <div class="ring"><svg viewBox="0 0 120 120" id="ringSvg" aria-hidden="true"></svg><div class="center"><div id="ringCount"><b id="ringNum">0</b><span class="of" id="ringOf">/5</span><span class="cap">TODAY</span></div><div id="ringSticker" hidden></div></div></div>
     <div>
       <div class="msg" id="heroMsg">さあ、今日のひとつ目から。</div>
@@ -543,9 +555,9 @@ body { background-color: var(--bg) !important;
     </div>
   </section>
 
-  <section class="habits" id="habits" aria-label="ルーティン"></section>
+  <section data-tab="today" class="habits" id="habits" aria-label="ルーティン"></section>
 
-  <section class="panel" aria-label="勉強の積み上げ">
+  <section data-tab="record" class="panel" aria-label="勉強の積み上げ">
     <div class="phead"><h2>勉強の積み上げ</h2><span class="label num" id="stTotal"></span></div>
     <div class="exam" id="exam"></div>
     <div class="sdash" id="sdash"></div>
@@ -557,18 +569,18 @@ body { background-color: var(--bg) !important;
     <div class="chart" id="studyChart"></div>
   </section>
 
-  <section class="panel" aria-label="今週">
+  <section data-tab="record" class="panel" aria-label="今週">
     <div class="phead"><h2>今週のがんばり</h2><span class="label" id="ticketInfo"></span></div>
     <div class="week" id="week"></div>
     <div class="wgoal"><div class="row" style="justify-content:space-between"><span>今週の目標：<b id="wgoalText"></b></span><span class="num" id="wgoalNum"></span></div><div class="xpbar"><i id="wgoalFill" style="width:0%"></i></div></div>
   </section>
 
-  <section class="memo">
+  <section data-tab="today" class="memo">
     <label class="label" for="memo">ひとことメモ（気分・体調・できたこと）</label>
     <textarea id="memo" placeholder="例：朝のストレッチで肩が軽くなった"></textarea>
   </section>
 
-  <section class="panel" aria-label="カレンダー">
+  <section data-tab="record" class="panel" aria-label="カレンダー">
     <div class="phead">
       <button class="iconbtn" id="prevMonth" aria-label="前の月">‹</button>
       <h2 id="monthTitle"></h2>
@@ -578,23 +590,23 @@ body { background-color: var(--bg) !important;
     <div class="legend" id="legend"></div>
   </section>
 
-  <section class="panel" aria-label="体重の推移">
+  <section data-tab="record" class="panel" aria-label="体重の推移">
     <div class="phead"><h2>体重の推移（30日）</h2><span class="label num" id="wSummary"></span></div>
     <div class="chart" id="chart"></div>
   </section>
 
-  <section class="panel" aria-label="シール帳">
+  <section data-tab="record" class="panel" aria-label="シール帳">
     <div class="phead"><h2>シール帳</h2><span class="label num" id="stickerCount"></span></div>
     <p class="empty-note" style="margin:0">ルーティンを全部できた日に、海とおとぎ話のシールが1枚もらえます。もらったシールはカレンダーのその日に貼られます。金色の真珠貝はめったに出ないレアシールです。</p>
     <div class="book" id="book"></div>
   </section>
 
-  <section class="panel" aria-label="バッジ">
+  <section data-tab="record" class="panel" aria-label="バッジ">
     <div class="phead"><h2>バッジ</h2><span class="label num" id="badgeCount"></span></div>
     <div class="badges" id="badges"></div>
   </section>
 
-  <section class="panel" aria-label="設定">
+  <section data-tab="settings" class="panel" aria-label="設定">
     <h2>設定</h2>
     <div class="settings">
       <label for="target">目標体重（kg）<input id="target" type="number" step="0.1" inputmode="decimal" placeholder="例 55.0"></label>
@@ -859,7 +871,7 @@ body { background-color: var(--bg) !important;
         if (cached.settings) queueSave("settings");
       } else {
         state.days = days;
-        if (settings && !store.pending.settings) state.settings = { rewardText: settings.rewardText ?? undefined, claimed: settings.claimed || {}, studyGoalHoliday: settings.studyGoalHoliday ?? null, subjTarget: settings.subjTarget || null, examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
+        if (settings && !store.pending.settings) state.settings = { layout: settings.layout || "all", rewardText: settings.rewardText ?? undefined, claimed: settings.claimed || {}, studyGoalHoliday: settings.studyGoalHoliday ?? null, subjTarget: settings.subjTarget || null, examDate: settings.examDate || null, examHours: settings.examHours ?? null, subjPw: settings.subjPw || [], subjLinks: settings.subjLinks || [], zumbaDays: Array.isArray(settings.zumbaDays) ? settings.zumbaDays : undefined, snsTypes: Array.isArray(settings.snsTypes) ? settings.snsTypes : undefined, subjects: settings.subjects || [], skin: settings.skin || null, targetWeight: settings.targetWeight ?? null, studyGoal: settings.studyGoal ?? null, weekGoal: settings.weekGoal ?? null, plans: settings.plans || {} };
       }
       if (first) setSaveState("同期しました（どの端末からでも同じ記録が見られます）");
       first = false;
@@ -983,7 +995,17 @@ body { background-color: var(--bg) !important;
   }
 
   // ---------- render ----------
+  let curTab = (() => { try { return localStorage.getItem("routine-tab") || "today"; } catch { return "today"; } })();
+  function applyLayout() {
+    const tabs = state.settings.layout === "tabs";
+    document.body.classList.toggle("tabmode", tabs);
+    ["today", "record", "settings"].forEach(t => document.body.classList.toggle("tab-" + t, curTab === t));
+    document.querySelectorAll("[data-layout]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.layout === (tabs ? "tabs" : "all"))));
+    document.querySelectorAll("[data-tabbtn]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tabbtn === curTab)));
+  }
+  function showTab(t) { curTab = t; try { localStorage.setItem("routine-tab", t); } catch {} applyLayout(); }
   function render() {
+    applyLayout();
     state.skinId = applySkin();
     renderHeader(); renderHero(); renderHabits(); renderMemo(); renderCal(); renderChart(); renderBadges(); renderSettings();
   }
@@ -1371,6 +1393,7 @@ body { background-color: var(--bg) !important;
   });
   function toggleHabit(id) {
     const k = state.selected, h = HABITS.find(x => x.id === id), before = countDone(day(k)), wasDone = isDone(day(k), h.id);
+    if ((h.id === "study" || (h.id === "weight" && !wasDone)) && curTab !== "today") showTab("today");
     if (h.id === "weight") {
       if (wasDone) { editDay(k, d => { d.weight = null; }); return; }
       const inp = $("weightIn");
@@ -1415,7 +1438,7 @@ body { background-color: var(--bg) !important;
   $("prevDay").onclick = () => selectDay(addDays(state.selected, -1));
   $("nextDay").onclick = () => { if (state.selected < todayKey()) selectDay(addDays(state.selected, 1)); };
   $("goToday").onclick = () => selectDay(todayKey());
-  $("cal").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b && !b.disabled) { selectDay(b.dataset.day); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+  $("cal").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b && !b.disabled) { showTab("today"); selectDay(b.dataset.day); window.scrollTo({ top: 0, behavior: "smooth" }); } });
   $("prevMonth").onclick = () => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1); renderCal(); };
   $("nextMonth").onclick = () => { state.month = new Date(state.month.getFullYear(), state.month.getMonth() + 1, 1); renderCal(); };
   function settingInput(id, field, min, max) {
@@ -1438,6 +1461,10 @@ body { background-color: var(--bg) !important;
   $("snsTypes").addEventListener("change", e => {
     const arr = [...new Set(e.target.value.split("\n").map(x => x.trim()).filter(Boolean))].slice(0, 10);
     state.settings = { ...state.settings, snsTypes: arr }; queueSave("settings"); lsSave(); render(); toast("投稿の種類を保存しました"); });
+  document.querySelector(".layoutsw").addEventListener("click", e => { const b = e.target.closest("[data-layout]"); if (!b) return;
+    state.settings = { ...state.settings, layout: b.dataset.layout }; queueSave("settings"); lsSave(); showTab("today"); render(); window.scrollTo({ top: 0 });
+    toast(b.dataset.layout === "tabs" ? "タブで分ける表示にしました" : "まとめて表示にしました"); });
+  $("tabs").addEventListener("click", e => { const b = e.target.closest("[data-tabbtn]"); if (!b) return; showTab(b.dataset.tabbtn); window.scrollTo({ top: 0 }); });
   $("mile").addEventListener("click", e => { const b = e.target.closest("[data-claim]"); if (!b || b.disabled) return; const h = b.dataset.claim;
     const c = { ...(state.settings.claimed || {}) }; if (c[h]) delete c[h]; else c[h] = true;
     state.settings = { ...state.settings, claimed: c }; queueSave("settings"); lsSave(); render(); if (c[h]) { toast("ご褒美、楽しんでね！"); celebrate(80); } });
